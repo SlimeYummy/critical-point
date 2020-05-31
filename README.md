@@ -3,6 +3,7 @@
 ### Bullet3
 
 Install cmake.
+
 Update bullet3 submodule in the project.
 
 ```
