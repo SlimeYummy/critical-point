@@ -1,0 +1,10 @@
+[package]
+name = "derive"
+version = "0.1.0"
+authors = ["FenQiDian <email@fenqi.moe>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
