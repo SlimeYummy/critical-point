@@ -7,6 +7,7 @@ Install cmake.
 Update bullet3 submodule in the project.
 
 ```
+git clone https://github.com/bulletphysics/bullet3.git
 cd bullet3
 cmake .
 cmake -DBUILD_PYBULLET=OFF -DUSE_DOUBLE_PRECISION=OFF -DCMAKE_BUILD_TYPE=Release .
