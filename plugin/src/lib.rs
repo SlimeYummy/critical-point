@@ -1,6 +1,9 @@
+#![feature(raw)]
 #![feature(vec_remove_item)]
 
 extern crate failure;
+#[macro_use]
+extern crate gdnative;
 extern crate libc;
 
 mod cpp;
@@ -10,26 +13,44 @@ mod logic;
 mod state_pool;
 mod utils;
 
-use std::time::Duration;
+#[derive(gdnative::NativeClass)]
+#[inherit(gdnative::Node)]
+struct HelloWorld;
 
-// use graphic::*;
-use logic::*;
-use std::fs::File;
+#[gdnative::methods]
+impl HelloWorld {
+    fn _init(_owner: gdnative::Node) -> Self {
+        HelloWorld
+    }
 
-#[no_mangle]
-extern "C" fn critical_point() {
-    File::create("E:/a.txt").unwrap();
-
-    let mut lo_engine = LoEngine::new();
-    lo_engine.run_command(LoCmdNewStage::new()).unwrap();
-    lo_engine.run_command(LoCmdNewCharacter::new()).unwrap();
-
-    // let _gr_engine = GrEngine::new("Perfect Glue", 1280, 720, 60);
-    for _ in 0..50 {
-        lo_engine
-            .run_step(Duration::from_secs_f32(10.0 / 60.0))
-            .unwrap();
-        let state = lo_engine.fetch_state().unwrap();
-        println!("{:?}\n", state);
+    #[export]
+    fn _ready(&self, _owner: gdnative::Node) {
+        godot_print!("hello, world.")
     }
 }
+
+fn init(handle: gdnative::init::InitHandle) {
+    handle.add_class::<HelloWorld>();
+}
+
+godot_gdnative_init!();
+godot_nativescript_init!(init);
+godot_gdnative_terminate!();
+
+// #[no_mangle]
+// extern "C" fn critical_point() {
+//     File::create("E:/a.txt").unwrap();
+//
+//     let mut lo_engine = LoEngine::new();
+//     lo_engine.run_command(LoCmdNewStage::new()).unwrap();
+//     lo_engine.run_command(LoCmdNewCharacter::new()).unwrap();
+//
+//     // let _gr_engine = GrEngine::new("Perfect Glue", 1280, 720, 60);
+//     for _ in 0..50 {
+//         lo_engine
+//             .run_step(Duration::from_secs_f32(10.0 / 60.0))
+//             .unwrap();
+//         let state = lo_engine.fetch_state().unwrap();
+//         println!("{:?}\n", state);
+//     }
+// }
