@@ -1,5 +1,5 @@
 [package]
-name = "derive"
+name = "macros"
 version = "0.1.0"
 authors = ["FenQiDian <email@fenqi.moe>"]
 edition = "2018"
@@ -8,3 +8,5 @@ edition = "2018"
 proc-macro = true
 
 [dependencies]
+syn = { version = "1", features = ["full"] }
+quote = "1"
