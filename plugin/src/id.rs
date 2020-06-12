@@ -9,11 +9,19 @@ pub struct ObjectID(u64);
 impl Eq for ObjectID {}
 
 impl From<u64> for ObjectID {
-    fn from(num: u64) -> ObjectID { return ObjectID(num); }
+    fn from(num: u64) -> ObjectID {
+        return ObjectID(num);
+    }
 }
 
 impl From<ObjectID> for u64 {
-    fn from(id: ObjectID) -> u64 { return id.0; }
+    fn from(id: ObjectID) -> u64 {
+        return id.0;
+    }
+}
+
+impl Default for ObjectID {
+    fn default() -> ObjectID { return ObjectID(0xFFFF_FFFF_FFFF_FFFF); }
 }
 
 impl ObjectID {
@@ -36,9 +44,7 @@ pub struct ObjectIDGener {
 
 impl ObjectIDGener {
     pub fn new() -> ObjectIDGener {
-        return ObjectIDGener{
-            counter: 100000,
-        };
+        return ObjectIDGener { counter: 100000 };
     }
 
     pub fn gen(&mut self) -> ObjectID {
