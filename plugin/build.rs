@@ -39,7 +39,7 @@ fn gen_bullet_bindings() {
         .expect("Couldn't write C++ bindings!");
 
     let re = Regex::new("_Dbt(\\w+)@@QEAAXXZ").unwrap();
-    let mut bullet = fs::read_to_string("./src/cpp/bullet.rs").unwrap();
+    let bullet = fs::read_to_string("./src/cpp/bullet.rs").unwrap();
     let norm_bullet = re.replace_all(&bullet, "1bt$1@@UEAA@XZ").into_owned();
     fs::write("./src/cpp/bullet.rs", norm_bullet).unwrap();
 }

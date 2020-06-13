@@ -14,7 +14,9 @@ cc = "1.0"
 regex = "1"
 
 [dependencies]
-macros = { path = "../macros" }
+lazy_static = "1.4"
 failure = "0.1"
 gdnative = "0.8"
 libc = "0.2"
+
+macros = { path = "../macros" }

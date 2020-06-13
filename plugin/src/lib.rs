@@ -5,31 +5,34 @@ extern crate failure;
 #[macro_use]
 extern crate gdnative;
 extern crate libc;
+extern crate macros;
 
 mod cpp;
 // mod graphic;
 mod id;
-mod logic;
-mod state_pool;
+// mod logic;
+mod state;
 mod utils;
 
-#[derive(gdnative::NativeClass)]
-#[inherit(gdnative::Node)]
+use gdnative as gd;
+
+#[derive(gd::NativeClass)]
+#[inherit(gd::Node)]
 struct HelloWorld;
 
-#[gdnative::methods]
+#[methods]
 impl HelloWorld {
-    fn _init(_owner: gdnative::Node) -> Self {
+    fn _init(_owner: gd::Node) -> Self {
         HelloWorld
     }
 
     #[export]
-    fn _ready(&self, _owner: gdnative::Node) {
+    fn _ready(&self, _owner: gd::Node) {
         godot_print!("hello, world.")
     }
 }
 
-fn init(handle: gdnative::init::InitHandle) {
+fn init(handle: gd::init::InitHandle) {
     handle.add_class::<HelloWorld>();
 }
 
