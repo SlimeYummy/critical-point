@@ -57,7 +57,7 @@ mod tests {
     use super::*;
     use crate::id::{ObjID, TYPE_STAGE};
     use crate::gdnative::{NativeClass, Node};
-    use crate::lazy_static::lazy_static;
+    use std::cell::RefCell;
 
     #[state_data(TYPE_STAGE)]
     #[derive(Debug, Default)]
@@ -77,11 +77,15 @@ mod tests {
         assert_eq!(t.lifecycle(), StateLifecycle::Unknown);
     }
 
-    lazy_static! {
-        static ref STATE_BINDER: StateBinder = StateBinder::new();
+    thread_local! {
+        static STATE_BINDER: RefCell<StateBinder> = RefCell::new(StateBinder::new());
     }
 
-    #[state_owner(TYPE_STAGE, ptr::null_mut())]
+    fn state_binder() -> &mut StateBinder {
+        return STATE_BINDER.get_mut();
+    }
+
+    #[state_owner(TYPE_STAGE, state_binder())]
     #[derive(Default, NativeClass)]
     #[inherit(Node)]
     struct TestOwner {

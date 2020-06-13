@@ -128,7 +128,7 @@ enum RefsMapValue {
 }
 
 impl StateBinder {
-    fn new() -> StateBinder {
+    pub fn new() -> StateBinder {
         return StateBinder {
             refers: HashMap::with_capacity(1024),
             pool: None,

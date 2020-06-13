@@ -140,13 +140,14 @@ fn is_derive_godot(attrs: &[Attribute]) -> bool {
 }
 
 fn state_refs_to_token<F>(fields: &Fields, func: F) -> Vec<TokenStream2>
-where F: FnMut(&Field) -> TokenStream2
+where F: FnMut(&Ident) -> TokenStream2
 {
     return fields.iter()
         .filter(|field| {
             println!("{:?}", field.ty);
-            return true;
+            return field.ident.is_some();
         })
+        .map(|field| field.ident.unwrap().clone())
         .map(func)
         .collect();
 }
