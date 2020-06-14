@@ -1,3 +1,4 @@
+#![feature(negative_impls)]
 #![feature(raw)]
 #![feature(vec_remove_item)]
 
