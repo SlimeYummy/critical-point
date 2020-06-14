@@ -1,4 +1,4 @@
-use super::{StateData, StateDataStatic, StateHeader};
+use super::{StateData, StateDataStatic, StateDataHeader};
 use crate::id::ObjID;
 use libc::c_void;
 use std::mem;
@@ -11,6 +11,12 @@ use crate::state::StateLifecycle;
 //
 
 #[derive(Debug)]
+struct InnerItem {
+    state: *mut u8,
+    vtable: *mut u8,
+}
+
+#[derive(Debug)]
 pub struct StatePool {
     chunk_size: usize,
     threshold_size: usize,
@@ -19,11 +25,8 @@ pub struct StatePool {
     states: Vec<InnerItem>,
 }
 
-#[derive(Debug)]
-struct InnerItem {
-    state: *mut u8,
-    vtable: *mut u8,
-}
+impl !Sync for StatePool {}
+impl !Send for StatePool {}
 
 impl StatePool {
     pub fn new(chunk_size: usize) -> StatePool {
@@ -50,7 +53,7 @@ impl StatePool {
         };
 
         unsafe {
-            let header = &mut *(ptr as *mut StateHeader);
+            let header = &mut *(ptr as *mut StateDataHeader);
             let state = ptr as *mut S;
 
             ptr::write(state, S::default());
@@ -69,10 +72,10 @@ impl StatePool {
 
     pub fn for_each<F>(&self, mut callback: F)
     where
-        F: FnMut(*mut StateHeader),
+        F: FnMut(*mut StateDataHeader),
     {
         for inner in &self.states {
-            callback(inner.state as *mut StateHeader);
+            callback(inner.state as *mut StateDataHeader);
         }
     }
 
@@ -263,18 +266,24 @@ mod tests {
     }
 
     #[state_data(TYPE_STAGE)]
-    #[derive(Default)]
     struct StateTest2 {
-        _u1: u128,
-        _u2: u128,
-        _u3: u128,
+        data: [u128; 8],
+    }
+
+    impl Default for StateTest2 {
+        fn default() -> StateTest2 {
+            return StateTest2{
+                header: Self::default_header(),
+                data: [0u128; 8],
+            };
+        }
     }
 
     #[test]
     fn test_state_pool() {
-        let mut sp = StatePool::new(256);
-        assert_eq!(sp.chunk_size, 256);
-        assert_eq!(sp.threshold_size, 256 / 8);
+        let mut sp = StatePool::new(512);
+        assert_eq!(sp.chunk_size, 512);
+        assert_eq!(sp.threshold_size, 512 / 8);
 
         let state1 = sp.make::<StateTest>(ObjID::from(1), StateLifecycle::Updated);
         assert_eq!(state1.num, 0);

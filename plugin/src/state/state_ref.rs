@@ -1,18 +1,34 @@
-use super::{StateData, StatePool, StateHeader};
+use super::{StateData, StatePool, StateDataHeader};
 use crate::id::{ObjID, TypeID};
 use failure::{format_err, Error};
-use std::cell::UnsafeCell;
+use std::cell::{RefCell, UnsafeCell};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ptr;
-use std::sync::Arc;
 use crate::state::StateDataStatic;
 
 //
 // State Reference
 //
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
+pub struct RefInner {
+    obj_id: ObjID,
+    type_id: TypeID,
+    state: *mut StateDataHeader,
+}
+
+impl Default for RefInner {
+    fn default() -> Self {
+        return RefInner {
+            obj_id: ObjID::invaild(),
+            type_id: TypeID::invaild(),
+            state: ptr::null_mut(),
+        };
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct StateRef<S>
 where
     S: StateData + StateDataStatic,
@@ -21,18 +37,14 @@ where
     phantom: PhantomData<S>,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct RefInner {
-    obj_id: ObjID,
-    type_id: TypeID,
-    state: *mut StateHeader,
-}
+impl<S> !Sync for StateRef<S> {}
+impl<S> !Send for StateRef<S> {}
 
 impl<S> StateRef<S>
 where
     S: StateData + StateDataStatic,
 {
-    fn new(obj_id: ObjID) -> StateRef<S> {
+    pub fn new(obj_id: ObjID) -> StateRef<S> {
         return StateRef {
             inner: UnsafeCell::new(RefInner {
                 obj_id,
@@ -43,12 +55,8 @@ where
         };
     }
 
-    fn inner_ptr(&self) -> *mut RefInner {
-        return self.inner.get();
-    }
-
-    fn inner_ref(&self) -> &mut RefInner {
-        return unsafe { &mut *self.inner_ptr() };
+    pub fn type_id(&self) -> TypeID {
+        return self.inner_ref().type_id;
     }
 
     pub fn obj_id(&self) -> ObjID {
@@ -66,6 +74,14 @@ where
         } else {
             return Err(format_err!("Empty state"));
         }
+    }
+
+    fn inner_ptr(&self) -> *mut RefInner {
+        return self.inner.get();
+    }
+
+    fn inner_ref(&self) -> &mut RefInner {
+        return unsafe { &mut *self.inner_ptr() };
     }
 }
 
@@ -112,19 +128,19 @@ where
 // }
 
 //
-// State Reference Manager
+// State Binder
 //
-
-#[derive(Debug)]
-pub struct StateBinder {
-    refers: HashMap<ObjID, RefsMapValue>,
-    pool: Option<Arc<StatePool>>,
-}
 
 #[derive(Debug, PartialEq)]
 enum RefsMapValue {
     Single(*mut RefInner),
     Multi(Vec<*mut RefInner>),
+}
+
+#[derive(Debug)]
+pub struct StateBinder {
+    refers: HashMap<ObjID, RefsMapValue>,
+    pool: Option<Box<StatePool>>,
 }
 
 impl StateBinder {
@@ -135,12 +151,23 @@ impl StateBinder {
         };
     }
 
-    pub fn register<S>(&mut self, state: &StateRef<S>)
+    pub fn refers_count(&self) -> usize {
+        return self.refers.len();
+    }
+
+    pub fn register<S>(&mut self, refer: &StateRef<S>) -> Result<(), Error>
     where
         S: StateData + StateDataStatic,
     {
-        let inner = state.inner_ptr();
-        let obj_id = state.obj_id();
+        if refer.type_id().is_invaild() {
+            return Err(format_err!("Invaild Object ID"));
+        }
+        if refer.obj_id().is_invaild() {
+            return Err(format_err!("Invaild Object ID"));
+        }
+
+        let inner = refer.inner_ptr();
+        let obj_id = refer.obj_id();
         if let Some(value) = self.refers.get_mut(&obj_id) {
             match value {
                 RefsMapValue::Single(single) => {
@@ -156,14 +183,16 @@ impl StateBinder {
         } else {
             self.refers.insert(obj_id, RefsMapValue::Single(inner));
         }
+
+        return Ok(());
     }
 
-    pub fn unregister<S>(&mut self, state: &StateRef<S>)
+    pub fn unregister<S>(&mut self, refer: &StateRef<S>)
     where
         S: StateData + StateDataStatic,
     {
-        let inner = state.inner_ptr();
-        let obj_id = state.obj_id();
+        let inner = refer.inner_ptr();
+        let obj_id = refer.obj_id();
         let mut remove = false;
         if let Some(value) = self.refers.get_mut(&obj_id) {
             match value {
@@ -181,15 +210,15 @@ impl StateBinder {
         }
     }
 
-    pub fn dispatch(&mut self, pool: Arc<StatePool>) {
+    pub fn dispatch(&mut self, pool: Box<StatePool>) {
         self.pool = None;
         self.clear_all();
         pool.for_each(|state| self.update(state));
         self.pool = Some(pool);
     }
 
-    fn update(&mut self, state: *mut StateHeader) {
-        fn compare(inner: &RefInner, header: &StateHeader) -> bool {
+    fn update(&mut self, state: *mut StateDataHeader) {
+        fn compare(inner: &RefInner, header: &StateDataHeader) -> bool {
             return inner.type_id == header.type_id && inner.obj_id == header.obj_id;
         }
 
@@ -226,6 +255,40 @@ impl StateBinder {
             };
         }
     }
+}
+
+//
+// Thread Local
+//
+
+thread_local! {
+    pub(super) static STATE_BINDER: RefCell<StateBinder> = RefCell::new(StateBinder::new());
+}
+
+pub fn state_binder_register<S>(refer: &StateRef<S>) -> Result<(), Error>
+where
+    S: StateData + StateDataStatic,
+{
+    let mut result = Ok(());
+    STATE_BINDER.with(|binder| {
+        result = binder.borrow_mut().register(refer);
+    });
+    return result;
+}
+
+pub fn state_binder_unregister<S>(refer: &StateRef<S>)
+where
+    S: StateData + StateDataStatic,
+{
+    STATE_BINDER.with(|binder| {
+        binder.borrow_mut().unregister(refer);
+    });
+}
+
+pub fn state_binder_dispatch(pool: Box<StatePool>) {
+    STATE_BINDER.with(|binder| {
+        binder.borrow_mut().dispatch(pool);
+    });
 }
 
 //
@@ -267,22 +330,26 @@ mod tests {
     }
 
     #[test]
-    fn test_state_ref_manager() {
+    fn test_state_binder() {
         let mut sb = StateBinder::new();
         let re1 = StateRef::<StateTest>::new(ObjID::from(123));
         let re2 = StateRef::<StateTest>::new(ObjID::from(456));
         let re3 = StateRef::<StateTest>::new(ObjID::from(456));
 
         let mut state = StateTest {
+            header: StateDataHeader{
+                obj_id: ObjID::invaild(),
+                type_id: TYPE_STAGE,
+                lifecycle: StateLifecycle::Updated,
+            },
             num: 0xABCD,
-            text: String::from("HaHa"),
-            ..StateTest::default()
+            text: String::from("HaHa")
         };
 
         // register
-        sb.register(&re1);
-        sb.register(&re2);
-        sb.register(&re3);
+        sb.register(&re1).unwrap();
+        sb.register(&re2).unwrap();
+        sb.register(&re3).unwrap();
         assert_eq!(
             sb.refers[&re1.obj_id()],
             RefsMapValue::Single(re1.inner_ptr())
@@ -297,13 +364,11 @@ mod tests {
         assert!(re1.state().is_err());
         assert!(re3.state().is_err());
 
-        sb.update(mut_ptr(&mut state));
-        assert!(re1.state().is_err());
-        assert!(re3.state().is_err());
-
+        state.header.obj_id = ObjID::from(123);
         sb.update(mut_ptr(&mut state));
         assert_eq!(re1.state().unwrap().num, 0xABCD);
 
+        state.header.obj_id = ObjID::from(456);
         sb.update(mut_ptr(&mut state));
         assert_eq!(re2.state().unwrap().num, 0xABCD);
         assert_eq!(re3.state().unwrap().num, 0xABCD);
@@ -326,60 +391,5 @@ mod tests {
         );
         sb.unregister(&re3);
         assert!(sb.refers.get(&re3.obj_id()).is_none());
-    }
-
-    #[test]
-    fn test_state_ref_and_pool() {
-        // pool
-        let mut sp = StatePool::new(1024);
-
-        let state1 = sp.make::<StateTest>(ObjID::from(123), StateLifecycle::Updated);
-        state1.num = 1;
-        state1.text = String::from("one");
-
-        let state2 = sp.make::<StateTest>(ObjID::from(456), StateLifecycle::Updated);
-        state2.num = 2;
-        state2.text = String::from("two");
-
-        // dispatcher
-        let mut sb = StateBinder::new();
-
-        let re1 = StateRef::<StateTest>::new(ObjID::from(123));
-        sb.register(&re1);
-        let re2 = StateRef::<StateTest>::new(ObjID::from(456));
-        sb.register(&re2);
-        let re3 = StateRef::<StateTest>::new(ObjID::from(456));
-        sb.register(&re3);
-        let re4 = StateRef::<StateTest>::new(ObjID::from(789));
-        sb.register(&re4);
-
-        sb.dispatch(Arc::new(sp));
-
-        // assert
-        assert_eq!(
-            re1.state().unwrap(),
-            &StateTest {
-                num: 1,
-                text: String::from("one"),
-                ..StateTest::default()
-            }
-        );
-        assert_eq!(
-            re2.state().unwrap(),
-            &StateTest {
-                num: 2,
-                text: String::from("two"),
-                ..StateTest::default()
-            }
-        );
-        assert_eq!(
-            re3.state().unwrap(),
-            &StateTest {
-                num: 2,
-                text: String::from("two"),
-                ..StateTest::default()
-            }
-        );
-        assert!(re4.state().is_err());
     }
 }
