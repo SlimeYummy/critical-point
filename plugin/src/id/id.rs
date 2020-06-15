@@ -22,7 +22,9 @@ impl From<ObjID> for u64 {
 }
 
 impl Default for ObjID {
-    fn default() -> ObjID { return ObjID(0xFFFF_FFFF_FFFF_FFFF); }
+    fn default() -> ObjID {
+        return ObjID(0xFFFF_FFFF_FFFF_FFFF);
+    }
 }
 
 impl ObjID {
@@ -81,7 +83,9 @@ impl From<TypeID> for u32 {
 }
 
 impl Default for TypeID {
-    fn default() -> TypeID { return TypeID(0xFFFF_FFFF); }
+    fn default() -> TypeID {
+        return TypeID(0xFFFF_FFFF);
+    }
 }
 
 impl TypeID {

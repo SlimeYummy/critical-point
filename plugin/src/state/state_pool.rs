@@ -1,10 +1,11 @@
-use super::{StateData, StateDataStatic, StateDataHeader};
+use super::StateData;
 use crate::id::ObjID;
+use crate::state::StateLifecycle;
+use crate::sup::{StateDataStatic, StateDataSuperField};
 use libc::c_void;
 use std::mem;
 use std::ptr;
 use std::raw::TraitObject;
-use crate::state::StateLifecycle;
 
 //
 // State Pool
@@ -53,13 +54,13 @@ impl StatePool {
         };
 
         unsafe {
-            let header = &mut *(ptr as *mut StateDataHeader);
+            let hidden = &mut *(ptr as *mut StateDataSuperField);
             let state = ptr as *mut S;
 
             ptr::write(state, S::default());
-            header.type_id = S::id();
-            header.obj_id = obj_id;
-            header.lifecycle = lifecycle;
+            hidden.type_id = S::id();
+            hidden.obj_id = obj_id;
+            hidden.lifecycle = lifecycle;
 
             self.states.push(InnerItem {
                 state: ptr,
@@ -72,10 +73,10 @@ impl StatePool {
 
     pub fn for_each<F>(&self, mut callback: F)
     where
-        F: FnMut(*mut StateDataHeader),
+        F: FnMut(*mut StateDataSuperField),
     {
         for inner in &self.states {
-            callback(inner.state as *mut StateDataHeader);
+            callback(inner.state as *mut StateDataSuperField);
         }
     }
 
@@ -215,8 +216,8 @@ union TransmuterTO<'t, TO: ?Sized + 't> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::macros::state_data;
     use crate::id::TYPE_STAGE;
+    use crate::macros::state_data;
 
     #[test]
     fn test_memory_chunk() {
@@ -256,6 +257,8 @@ mod tests {
         text: String,
     }
 
+    impl StateData for StateTest {}
+
     impl Drop for StateTest {
         fn drop(&mut self) {
             println!(
@@ -270,10 +273,12 @@ mod tests {
         data: [u128; 8],
     }
 
+    impl StateData for StateTest2 {}
+
     impl Default for StateTest2 {
         fn default() -> StateTest2 {
-            return StateTest2{
-                header: Self::default_header(),
+            return StateTest2 {
+                sup: Self::default_super(),
                 data: [0u128; 8],
             };
         }

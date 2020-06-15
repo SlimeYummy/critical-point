@@ -13,6 +13,7 @@ mod cpp;
 mod id;
 // mod logic;
 mod state;
+mod sup;
 mod utils;
 
 use gdnative as gd;
