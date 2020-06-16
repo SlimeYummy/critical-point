@@ -1,11 +1,11 @@
-use super::{StateData, StatePool, StateDataHeader};
+use super::{StateData, StatePool};
 use crate::id::{ObjID, TypeID};
+use crate::sup::{StateDataStatic, StateDataSuperField};
 use failure::{format_err, Error};
 use std::cell::{RefCell, UnsafeCell};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ptr;
-use crate::state::StateDataStatic;
 
 //
 // State Reference
@@ -15,7 +15,7 @@ use crate::state::StateDataStatic;
 pub struct RefInner {
     obj_id: ObjID,
     type_id: TypeID,
-    state: *mut StateDataHeader,
+    state: *mut StateDataSuperField,
 }
 
 impl Default for RefInner {
@@ -217,8 +217,8 @@ impl StateBinder {
         self.pool = Some(pool);
     }
 
-    fn update(&mut self, state: *mut StateDataHeader) {
-        fn compare(inner: &RefInner, header: &StateDataHeader) -> bool {
+    fn update(&mut self, state: *mut StateDataSuperField) {
+        fn compare(inner: &RefInner, header: &StateDataSuperField) -> bool {
             return inner.type_id == header.type_id && inner.obj_id == header.obj_id;
         }
 
@@ -298,10 +298,10 @@ pub fn state_binder_dispatch(pool: Box<StatePool>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::mut_ptr;
+    use crate::id::TYPE_STAGE;
     use crate::macros::state_data;
     use crate::state::StateLifecycle;
-    use crate::id::TYPE_STAGE;
+    use crate::utils::mut_ptr;
 
     #[state_data(TYPE_STAGE)]
     #[derive(Debug, Default, PartialEq)]
@@ -309,6 +309,8 @@ mod tests {
         num: u32,
         text: String,
     }
+
+    impl StateData for StateTest {}
 
     #[test]
     fn test_state_ref() {
@@ -337,13 +339,9 @@ mod tests {
         let re3 = StateRef::<StateTest>::new(ObjID::from(456));
 
         let mut state = StateTest {
-            header: StateDataHeader{
-                obj_id: ObjID::invaild(),
-                type_id: TYPE_STAGE,
-                lifecycle: StateLifecycle::Updated,
-            },
+            sup: StateTest::new_super(ObjID::invaild(), StateLifecycle::Updated),
             num: 0xABCD,
-            text: String::from("HaHa")
+            text: String::from("HaHa"),
         };
 
         // register
@@ -364,11 +362,11 @@ mod tests {
         assert!(re1.state().is_err());
         assert!(re3.state().is_err());
 
-        state.header.obj_id = ObjID::from(123);
+        state.sup = StateTest::new_super(ObjID::from(123), StateLifecycle::Updated);
         sb.update(mut_ptr(&mut state));
         assert_eq!(re1.state().unwrap().num, 0xABCD);
 
-        state.header.obj_id = ObjID::from(456);
+        state.sup = StateTest::new_super(ObjID::from(456), StateLifecycle::Updated);
         sb.update(mut_ptr(&mut state));
         assert_eq!(re2.state().unwrap().num, 0xABCD);
         assert_eq!(re3.state().unwrap().num, 0xABCD);

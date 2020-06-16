@@ -5,40 +5,41 @@ mod state_ref;
 
 pub use crate::macros::{state_data, state_owner};
 pub use state_pool::StatePool;
-pub use state_ref::{StateBinder, StateRef, state_binder_register, state_binder_unregister, state_binder_dispatch};
+pub use state_ref::{
+    state_binder_dispatch, state_binder_register, state_binder_unregister, StateBinder, StateRef,
+};
 
 use crate::id::{ObjID, TypeID};
+use crate::sup::{StateDataSuper, StateOwnerSuper};
+use failure::Error;
 
-pub trait StateData {
-    fn obj_id(&self) -> ObjID;
-    fn type_id(&self) -> TypeID;
-    fn lifecycle(&self) -> StateLifecycle;
+pub trait StateData
+where
+    Self: StateDataSuper,
+{
+    fn obj_id(&self) -> ObjID {
+        return self._obj_id();
+    }
+    fn type_id(&self) -> TypeID {
+        return self._type_id();
+    }
+    fn lifecycle(&self) -> StateLifecycle {
+        return self._lifecycle();
+    }
 }
 
-pub trait StateDataStatic {
-    fn id() -> TypeID;
-}
-
-pub trait StateOwner {}
-
-pub trait StateOwnerStatic {
-    fn id() -> TypeID;
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct StateDataHeader {
-    pub(super) obj_id: crate::id::ObjID,
-    pub(super) type_id: crate::id::TypeID,
-    pub(super) lifecycle: crate::state::StateLifecycle,
-}
-
-impl Default for StateDataHeader {
-    fn default() -> StateDataHeader {
-        return StateDataHeader {
-            obj_id: ObjID::invaild(),
-            type_id: TypeID::invaild(),
-            lifecycle: StateLifecycle::Unknown,
-        };
+pub trait StateOwner
+where
+    Self: StateOwnerSuper,
+{
+    fn obj_id(&self) -> ObjID {
+        return self._obj_id();
+    }
+    fn type_id(&self) -> TypeID {
+        return self._type_id();
+    }
+    fn bind_state(&mut self) -> Result<(), Error> {
+        return self._bind_state();
     }
 }
 
@@ -51,14 +52,17 @@ pub enum StateLifecycle {
 }
 
 impl Default for StateLifecycle {
-    fn default() -> StateLifecycle { return StateLifecycle::Unknown; }
+    fn default() -> StateLifecycle {
+        return StateLifecycle::Unknown;
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::id::{ObjID, TYPE_STAGE};
     use crate::gdnative::{NativeClass, Node};
+    use crate::id::{ObjID, TYPE_STAGE};
+    use crate::sup::StateDataStatic;
     use state_ref::STATE_BINDER;
 
     #[state_data(TYPE_STAGE)]
@@ -67,6 +71,8 @@ mod tests {
         num: u32,
         text: String,
     }
+
+    impl StateData for StateDataTest {}
 
     #[test]
     fn test_macro_state_data() {
@@ -87,12 +93,14 @@ mod tests {
         num: u32,
     }
 
+    impl StateOwner for StateOwnerTest {}
+
     #[methods]
     impl StateOwnerTest {
         fn new(obj_id: ObjID) -> StateOwnerTest {
-            return StateOwnerTest{
+            return StateOwnerTest {
                 refer: StateRef::new(obj_id),
-                .. Default::default()
+                ..Default::default()
             };
         }
 
