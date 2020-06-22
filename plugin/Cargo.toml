@@ -14,9 +14,16 @@ cc = "1.0"
 regex = "1"
 
 [dependencies]
-lazy_static = "1.4"
+approx = "0.3"
+alga = "0.9"
+euclid = "0.20"
 failure = "0.1"
+fixed = "1.0"
 gdnative = "0.8"
 libc = "0.2"
+nalgebra = "0.21"
+ncollide3d = { version = "0.23", features = [ "improved_fixed_point_support" ] }
+nphysics3d = { version = "0.16", features = [ "improved_fixed_point_support" ] }
+simba = { version = "0.1", features = [ "partial_fixed_point_support" ] }
 
 macros = { path = "../macros" }

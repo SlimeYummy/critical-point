@@ -54,13 +54,13 @@ impl StatePool {
         };
 
         unsafe {
-            let hidden = &mut *(ptr as *mut StateDataSuperField);
+            let sup = &mut *(ptr as *mut StateDataSuperField);
             let state = ptr as *mut S;
 
             ptr::write(state, S::default());
-            hidden.type_id = S::id();
-            hidden.obj_id = obj_id;
-            hidden.lifecycle = lifecycle;
+            sup.type_id = S::id();
+            sup.obj_id = obj_id;
+            sup.lifecycle = lifecycle;
 
             self.states.push(InnerItem {
                 state: ptr,

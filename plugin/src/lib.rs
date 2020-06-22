@@ -2,16 +2,20 @@
 #![feature(raw)]
 #![feature(vec_remove_item)]
 
+extern crate euclid;
 extern crate failure;
+extern crate fixed;
 #[macro_use]
 extern crate gdnative;
 extern crate libc;
 extern crate macros;
+extern crate nalgebra as na;
+extern crate ncollide3d;
+extern crate simba;
 
-mod cpp;
 // mod graphic;
 mod id;
-// mod logic;
+mod logic;
 mod state;
 mod sup;
 mod utils;
