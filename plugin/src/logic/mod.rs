@@ -27,8 +27,3 @@ where
     }
     fn update(&mut self, pool: &mut Box<StatePool>, dura: Duration) -> Result<(), Error>;
 }
-
-pub trait Command {
-    fn get_name(&self) -> &'static str;
-    fn execute(&self, engine: &mut LogicEngine) -> Result<(), Error>;
-}

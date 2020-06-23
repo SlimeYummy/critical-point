@@ -5,9 +5,9 @@ use crate::utils::{mut_ptr, Fixed64, fixed64};
 use failure::{format_err, Error};
 use ncollide3d::pipeline::world::CollisionWorld;
 use std::collections::HashMap;
-use std::mem;
-use std::ptr;
 use std::time::Duration;
+use na::Isometry3;
+use ncollide3d::pipeline::{CollisionGroups, GeometricQueryType};
 
 const STATE_POOL_SIZE: usize = 1024 * 1024 * 4;
 
@@ -48,23 +48,36 @@ impl LogicEngine {
 
         return Ok(state_pool);
     }
+}
 
-    pub(super) fn gene_obj_id(&mut self) -> ObjID {
-        return self.id_gener.gen();
-    }
-
-    pub(super) fn register_stage(&mut self, mut stage: Box<LogicStage>) -> Result<(), Error> {
+impl LogicEngine {
+    fn cmd_new_stage(&mut self, _: CmdNewStage) -> Result<(), Error> {
         if self.stage.is_some() {
             return Err(format_err!("Stage already exists."));
         }
+        let obj_id = self.id_gener.gen();
+        let stage = LogicStage::new(obj_id);
+        self.world.add(
+            Isometry3::new(na::zero(), na::zero()),
+            stage.shape.clone(),
+            CollisionGroups::new(),
+            GeometricQueryType::Proximity(fixed64(0.0)),
+            (),
+        );
         self.stage = Some(stage);
         return Ok(());
     }
 
-    pub(super) fn register_character(
-        &mut self,
-        mut chara: Box<LogicCharacter>,
-    ) -> Result<(), Error> {
+    fn cmd_new_character(&mut self, cmd: CmdNewCharacter) -> Result<(), Error> {
+        let obj_id = self.id_gener.gen();
+        let chara = LogicCharacter::new(obj_id);
+        self.world.add(
+            Isometry3::new(cmd.position, na::zero()),
+            chara.shape.clone(),
+            CollisionGroups::new(),
+            GeometricQueryType::Proximity(fixed64(0.0)),
+            (),
+        );
         self.characters.insert(chara.obj_id(), chara);
         return Ok(());
     }

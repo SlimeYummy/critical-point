@@ -1,20 +1,20 @@
 use crate::id::{ObjID, TYPE_STAGE};
 use crate::logic::{logic_obj, LogicObj};
 use crate::state::{state_data, StateData, StateLifecycle, StatePool};
-use crate::utils::mut_ptr;
+use crate::utils::Fixed64;
 use failure::Error;
-use std::mem;
-use std::ptr;
 use std::time::Duration;
+use ncollide3d::shape::{ShapeHandle, Plane};
+use na::Vector3;
 
 #[logic_obj(TYPE_STAGE)]
 pub struct LogicStage {
-    lifecycle: StateLifecycle,
+    pub(crate) lifecycle: StateLifecycle,
+    pub(crate) shape: ShapeHandle<Fixed64>,
 }
 
 impl Drop for LogicStage {
-    fn drop(&mut self) {
-    }
+    fn drop(&mut self) {}
 }
 
 impl LogicStage {
@@ -22,6 +22,7 @@ impl LogicStage {
         return Box::new(LogicStage {
             sup: Self::new_super(obj_id),
             lifecycle: StateLifecycle::Created,
+            shape: ShapeHandle::new(Plane::new(Vector3::z_axis())),
         });
     }
 }

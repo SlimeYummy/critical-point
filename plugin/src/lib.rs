@@ -16,25 +16,50 @@ extern crate simba;
 // mod graphic;
 mod id;
 mod logic;
+// mod model;
 mod state;
 mod sup;
 mod utils;
 
 use gdnative as gd;
+use logic::*;
+use na::Vector3;
 
 #[derive(gd::NativeClass)]
-#[inherit(gd::Node)]
-struct HelloWorld;
+#[inherit(gd::Spatial)]
+struct HelloWorld{
+    start: gd::Vector3,
+    counter: f32,
+}
 
 #[methods]
 impl HelloWorld {
-    fn _init(_owner: gd::Node) -> Self {
-        HelloWorld
+    fn _init(_owner: gd::Spatial) -> Self {
+        return HelloWorld{
+            start: gd::Vector3::zero(),
+            counter: 0.0,
+        };
     }
 
     #[export]
-    fn _ready(&self, _owner: gd::Node) {
-        godot_print!("hello, world.")
+    fn _ready(&mut self, mut owner: gd::Spatial) {
+        unsafe {
+            self.start = owner.get_translation();
+            owner.set_physics_process(true);
+        };
+        godot_print!("start {:?}", self.start);
+        // let mut engine = LogicEngine::new();
+        // engine.command(Command::NewStage(CmdNewStage{}));
+        // engine.command(Command::NewCharacter(CmdNewCharacter{
+        //     position: Vector3::new(fixed64(0), fixed64(0), fixed64(5)),
+        // }));
+    }
+
+    #[export]
+    unsafe fn _physics_process(&mut self, mut owner: gd::Spatial, _delta: f64) {
+        let offset = gd::Vector3::new(0.0, self.counter, 0.0);
+        self.counter += 1.0 / 60.0;
+        unsafe { owner.set_translation(self.start + offset); }
     }
 }
 

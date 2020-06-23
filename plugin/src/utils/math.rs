@@ -1,7 +1,7 @@
 use euclid::num::Zero;
 use fixed::traits::ToFixed;
 use fixed::types::{I20F12, I40F24};
-use simba::scalar::{FixedI40F24, FixedI20F12};
+use simba::scalar::{FixedI20F12, FixedI40F24};
 
 pub type Fixed32 = FixedI20F12;
 pub type Fixed64 = FixedI40F24;
