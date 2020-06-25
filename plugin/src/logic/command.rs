@@ -1,5 +1,5 @@
-use na::Vector3;
 use crate::utils::Fixed64;
+use na::Vector3;
 
 #[derive(Clone, Debug)]
 pub enum Command {

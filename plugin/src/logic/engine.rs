@@ -1,13 +1,13 @@
 use crate::id::{ObjID, ObjectIDGener};
 use crate::logic::*;
 use crate::state::StatePool;
-use crate::utils::{mut_ptr, Fixed64, fixed64};
+use crate::utils::{fixed64, mut_ptr, Fixed64};
 use failure::{format_err, Error};
+use na::Isometry3;
 use ncollide3d::pipeline::world::CollisionWorld;
+use ncollide3d::pipeline::{CollisionGroups, GeometricQueryType};
 use std::collections::HashMap;
 use std::time::Duration;
-use na::Isometry3;
-use ncollide3d::pipeline::{CollisionGroups, GeometricQueryType};
 
 const STATE_POOL_SIZE: usize = 1024 * 1024 * 4;
 
@@ -19,8 +19,7 @@ pub struct LogicEngine {
 }
 
 impl Drop for LogicEngine {
-    fn drop(&mut self) {
-    }
+    fn drop(&mut self) {}
 }
 
 impl LogicEngine {
