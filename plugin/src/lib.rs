@@ -1,5 +1,11 @@
+#![feature(allocator_api)]
+#![feature(alloc_layout_extra)]
+#![feature(box_into_raw_non_null)]
+#![feature(coerce_unsized)]
+#![feature(dispatch_from_dyn)]
 #![feature(negative_impls)]
 #![feature(raw)]
+#![feature(unsize)]
 #![feature(vec_remove_item)]
 
 extern crate euclid;
@@ -27,7 +33,7 @@ use na::Vector3;
 
 #[derive(gd::NativeClass)]
 #[inherit(gd::Spatial)]
-struct HelloWorld{
+struct HelloWorld {
     start: gd::Vector3,
     counter: f32,
 }
@@ -35,7 +41,7 @@ struct HelloWorld{
 #[methods]
 impl HelloWorld {
     fn _init(_owner: gd::Spatial) -> Self {
-        return HelloWorld{
+        return HelloWorld {
             start: gd::Vector3::zero(),
             counter: 0.0,
         };
@@ -59,7 +65,9 @@ impl HelloWorld {
     unsafe fn _physics_process(&mut self, mut owner: gd::Spatial, _delta: f64) {
         let offset = gd::Vector3::new(0.0, self.counter, 0.0);
         self.counter += 1.0 / 60.0;
-        unsafe { owner.set_translation(self.start + offset); }
+        unsafe {
+            owner.set_translation(self.start + offset);
+        }
     }
 }
 

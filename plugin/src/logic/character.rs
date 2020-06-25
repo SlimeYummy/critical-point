@@ -1,10 +1,10 @@
 use crate::id::{ObjID, TYPE_CHARACTER};
 use crate::logic::{logic_obj, LogicObj};
 use crate::state::{state_data, StateData, StateLifecycle, StatePool};
-use crate::utils::{Fixed64, fixed64};
+use crate::utils::{fixed64, Fixed64};
 use failure::Error;
 use failure::_core::time::Duration;
-use ncollide3d::shape::{ShapeHandle, Capsule};
+use ncollide3d::shape::{Capsule, ShapeHandle};
 
 #[logic_obj(TYPE_CHARACTER)]
 pub struct LogicCharacter {

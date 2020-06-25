@@ -3,9 +3,9 @@ use crate::logic::{logic_obj, LogicObj};
 use crate::state::{state_data, StateData, StateLifecycle, StatePool};
 use crate::utils::Fixed64;
 use failure::Error;
-use std::time::Duration;
-use ncollide3d::shape::{ShapeHandle, Plane};
 use na::Vector3;
+use ncollide3d::shape::{Plane, ShapeHandle};
+use std::time::Duration;
 
 #[logic_obj(TYPE_STAGE)]
 pub struct LogicStage {
