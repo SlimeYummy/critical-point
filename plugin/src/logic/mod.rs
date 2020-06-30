@@ -11,19 +11,13 @@ pub use stage::*;
 
 use crate::id::{ObjID, TypeID};
 use crate::state::StatePool;
-use crate::sup::LogicObjSuper;
 use failure::Error;
 use std::time::Duration;
+use std::rc::Rc;
 
-pub trait LogicObj
-where
-    Self: LogicObjSuper,
-{
-    fn obj_id(&self) -> ObjID {
-        return self._obj_id();
-    }
-    fn type_id(&self) -> TypeID {
-        return self._type_id();
-    }
+pub trait LogicObj {
+    fn obj_id(&self) -> ObjID;
+    fn type_id(&self) -> TypeID;
+    fn collide(&mut self, other: Rc<dyn LogicObj>) -> Result<(), Error>;
     fn update(&mut self, pool: &mut Box<StatePool>, dura: Duration) -> Result<(), Error>;
 }
