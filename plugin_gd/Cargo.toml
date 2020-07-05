@@ -1,0 +1,12 @@
+[package]
+name = "plugin-gd"
+version = "0.1.0"
+authors = ["FenQiDian <email@fenqi.moe>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+name = "critical_point_gd"
+
+[dependencies]
+core = { path = "../core" }
