@@ -1,7 +1,6 @@
 [workspace]
 members = [
-    "core"
+    "core",
     "macros",
     "plugin_gd",
-    "plugin_ue",
 ]

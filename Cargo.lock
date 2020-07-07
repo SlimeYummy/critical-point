@@ -204,6 +204,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "core"
+version = "0.1.0"
+dependencies = [
+ "alga",
+ "approx",
+ "bindgen 0.53.1",
+ "cc",
+ "euclid",
+ "failure",
+ "fixed",
+ "libc",
+ "macros",
+ "nalgebra",
+ "ncollide3d",
+ "nphysics3d",
+ "regex",
+ "simba",
+]
+
+[[package]]
 name = "discard"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -708,24 +728,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "plugin"
+name = "plugin-gd"
 version = "0.1.0"
 dependencies = [
- "alga",
- "approx",
- "bindgen 0.53.1",
- "cc",
- "euclid",
+ "core",
  "failure",
- "fixed",
  "gdnative",
- "libc",
- "macros",
  "nalgebra",
- "ncollide3d",
- "nphysics3d",
- "regex",
- "simba",
 ]
 
 [[package]]

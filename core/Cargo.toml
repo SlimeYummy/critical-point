@@ -15,7 +15,6 @@ alga = "0.9"
 euclid = "0.20"
 failure = "0.1"
 fixed = "1.0"
-gdnative = "0.8"
 libc = "0.2"
 nalgebra = "0.21"
 ncollide3d = { version = "0.23", features = [ "improved_fixed_point_support" ] }
