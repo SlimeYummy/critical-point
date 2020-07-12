@@ -1,0 +1,13 @@
+[package]
+name = "math"
+version = "0.1.0"
+authors = ["FenQiDian <email@fenqi.moe>"]
+edition = "2018"
+
+[dependencies]
+alga = "0.9"
+approx = "0.3"
+euclid = "0.20"
+fixed = "1.0"
+nalgebra = "0.21"
+simba = { version = "0.1", features = [ "partial_fixed_point_support" ] }
