@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 
+mod class;
 mod id;
 
-pub use id::{ObjID, ObjectIDGener, TypeID};
-
-pub const TYPE_STAGE: TypeID = TypeID(1);
-pub const TYPE_CHARACTER: TypeID = TypeID(2);
+pub use class::*;
+pub use id::{ClassID, ObjID, ObjectIDGener};
