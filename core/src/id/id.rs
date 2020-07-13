@@ -66,31 +66,31 @@ impl ObjectIDGener {
 //
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, PartialOrd)]
-pub struct TypeID(pub(super) u32);
+pub struct ClassID(pub(super) u32);
 
-impl Eq for TypeID {}
+impl Eq for ClassID {}
 
-impl From<u32> for TypeID {
-    fn from(num: u32) -> TypeID {
-        return TypeID(num);
+impl From<u32> for ClassID {
+    fn from(num: u32) -> ClassID {
+        return ClassID(num);
     }
 }
 
-impl From<TypeID> for u32 {
-    fn from(id: TypeID) -> u32 {
+impl From<ClassID> for u32 {
+    fn from(id: ClassID) -> u32 {
         return id.0;
     }
 }
 
-impl Default for TypeID {
-    fn default() -> TypeID {
-        return TypeID(0xFFFF_FFFF);
+impl Default for ClassID {
+    fn default() -> ClassID {
+        return ClassID(0xFFFF_FFFF);
     }
 }
 
-impl TypeID {
-    pub fn invaild() -> TypeID {
-        return TypeID(0xFFFF_FFFF);
+impl ClassID {
+    pub fn invaild() -> ClassID {
+        return ClassID(0xFFFF_FFFF);
     }
 
     pub fn is_vaild(&self) -> bool {
