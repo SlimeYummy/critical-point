@@ -1,7 +1,5 @@
-use super::StateData;
-use crate::id::ObjID;
-use crate::state::StateLifecycle;
-use crate::sup::{StateDataStatic, StateDataSuperField};
+use super::{StateData, StateDataStatic, StateLifecycle};
+use crate::id::{ClassID, ObjID};
 use libc::c_void;
 use std::mem;
 use std::ptr;
@@ -12,9 +10,12 @@ use std::raw::TraitObject;
 //
 
 #[derive(Debug)]
-struct InnerItem {
-    state: *mut u8,
-    vtable: *mut u8,
+pub struct StatePoolItem {
+    pub state: *mut u8,
+    pub(super) vtable: *mut u8,
+    pub obj_id: ObjID,
+    pub class_id: ClassID,
+    pub lifecycle: StateLifecycle,
 }
 
 #[derive(Debug)]
@@ -23,11 +24,11 @@ pub struct StatePool {
     threshold_size: usize,
     chunks: Vec<MemoryChunk>,
     buffers: MemoryBuffers,
-    states: Vec<InnerItem>,
+    states: Vec<StatePoolItem>,
 }
 
-impl !Sync for StatePool {}
-impl !Send for StatePool {}
+unsafe impl Sync for StatePool {}
+unsafe impl Send for StatePool {}
 
 impl StatePool {
     pub fn new(chunk_size: usize) -> StatePool {
@@ -44,7 +45,7 @@ impl StatePool {
 
     pub fn make<S>(&mut self, obj_id: ObjID, lifecycle: StateLifecycle) -> &mut S
     where
-        S: StateData + StateDataStatic + Default + Sized,
+        S: StateData + StateDataStatic,
     {
         let size = (mem::size_of::<S>() + 15) & !15;
         let ptr = if size <= self.threshold_size {
@@ -54,29 +55,27 @@ impl StatePool {
         };
 
         unsafe {
-            let sup = &mut *(ptr as *mut StateDataSuperField);
-            let state = ptr as *mut S;
+            let state = &mut *(ptr as *mut S);
+            ptr::write(state, S::init(obj_id, lifecycle));
 
-            ptr::write(state, S::default());
-            sup.type_id = S::id();
-            sup.obj_id = obj_id;
-            sup.lifecycle = lifecycle;
-
-            self.states.push(InnerItem {
+            self.states.push(StatePoolItem {
                 state: ptr,
                 vtable: state_vtable::<S>(),
+                obj_id: state.obj_id(),
+                class_id: state.class_id(),
+                lifecycle: state.lifecycle(),
             });
 
-            return state.as_mut().unwrap(); // must not null
+            return state; // must not null
         };
     }
 
     pub fn for_each<F>(&self, mut callback: F)
     where
-        F: FnMut(*mut StateDataSuperField),
+        F: FnMut(usize, &StatePoolItem),
     {
-        for inner in &self.states {
-            callback(inner.state as *mut StateDataSuperField);
+        for (index, item) in self.states.iter().enumerate() {
+            callback(index, item);
         }
     }
 
@@ -105,11 +104,11 @@ impl StatePool {
 impl Drop for StatePool {
     fn drop(&mut self) {
         let states = mem::replace(&mut self.states, Vec::new());
-        for inner in states {
+        for item in states {
             unsafe {
                 let to: &mut dyn StateData = mem::transmute(TraitObject {
-                    data: inner.state as *mut (),
-                    vtable: inner.vtable as *mut (),
+                    data: item.state as *mut (),
+                    vtable: item.vtable as *mut (),
                 });
                 ptr::drop_in_place(to);
             };
@@ -216,8 +215,9 @@ union TransmuterTO<'t, TO: ?Sized + 't> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::id::TYPE_STAGE;
-    use crate::macros::state_data;
+    use crate as core;
+    use crate::derive::StateDataX;
+    use crate::id::CLASS_STAGE;
 
     #[test]
     fn test_memory_chunk() {
@@ -250,14 +250,14 @@ mod tests {
         assert_eq!(mb.buffers.len(), 2);
     }
 
-    #[state_data(TYPE_STAGE)]
-    #[derive(Default)]
+    #[derive(StateDataX, Default)]
+    #[class_id(CLASS_STAGE)]
     struct StateTest {
+        obj_id: ObjID,
+        lifecycle: StateLifecycle,
         num: u32,
         text: String,
     }
-
-    impl StateData for StateTest {}
 
     impl Drop for StateTest {
         fn drop(&mut self) {
@@ -268,17 +268,19 @@ mod tests {
         }
     }
 
-    #[state_data(TYPE_STAGE)]
+    #[derive(StateDataX)]
+    #[class_id(CLASS_STAGE)]
     struct StateTest2 {
+        obj_id: ObjID,
+        lifecycle: StateLifecycle,
         data: [u128; 8],
     }
-
-    impl StateData for StateTest2 {}
 
     impl Default for StateTest2 {
         fn default() -> StateTest2 {
             return StateTest2 {
-                sup: Self::default_super(),
+                obj_id: ObjID::default(),
+                lifecycle: StateLifecycle::default(),
                 data: [0u128; 8],
             };
         }
@@ -293,9 +295,12 @@ mod tests {
         let state1 = sp.make::<StateTest>(ObjID::from(1), StateLifecycle::Updated);
         assert_eq!(state1.num, 0);
         assert_eq!(state1.text, String::new());
-        assert_eq!(sp.chunks[0].offset, mem::size_of::<StateTest>());
+        assert_eq!(
+            sp.chunks[0].offset,
+            (mem::size_of::<StateTest>() + 15) & !15
+        );
 
-        let state2 = sp.make::<StateTest2>(ObjID::from(2), StateLifecycle::Updated);
+        let _ = sp.make::<StateTest2>(ObjID::from(2), StateLifecycle::Updated);
         assert_eq!(sp.buffers.buffers.len(), 1);
     }
 }

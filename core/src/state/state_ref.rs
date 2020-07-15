@@ -1,11 +1,13 @@
-use super::{StateData, StatePool};
-use crate::id::{ObjID, TypeID};
-use crate::sup::{StateDataStatic, StateDataSuperField};
-use failure::{format_err, Error};
+use super::state_pool::StatePoolItem;
+use super::{StateData, StateDataStatic, StatePool};
+use crate::id::{ClassID, ObjID};
+use crate::util::make_err;
+use failure::Error;
 use std::cell::{RefCell, UnsafeCell};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ptr;
+use std::rc::Rc;
 
 //
 // State Reference
@@ -14,49 +16,64 @@ use std::ptr;
 #[derive(Clone, Copy, Debug)]
 pub struct RefInner {
     obj_id: ObjID,
-    type_id: TypeID,
-    state: *mut StateDataSuperField,
+    class_id: ClassID,
+    reg_flag: bool,
+    state: *mut u8,
 }
 
 impl Default for RefInner {
     fn default() -> Self {
         return RefInner {
             obj_id: ObjID::invaild(),
-            type_id: TypeID::invaild(),
+            class_id: ClassID::invaild(),
+            reg_flag: false,
             state: ptr::null_mut(),
         };
     }
 }
 
 #[derive(Debug, Default)]
-pub struct StateRef<S>
+pub struct StateRef<S, R = StateLocalReg<S>>
 where
     S: StateData + StateDataStatic,
+    R: StateReg<S>,
 {
+    reg: R,
     inner: UnsafeCell<RefInner>,
     phantom: PhantomData<S>,
 }
 
-impl<S> !Sync for StateRef<S> {}
-impl<S> !Send for StateRef<S> {}
+impl<S, R> !Sync for StateRef<S, R> {}
+impl<S, R> !Send for StateRef<S, R> {}
 
-impl<S> StateRef<S>
+impl<S, R> StateRef<S, R>
 where
     S: StateData + StateDataStatic,
+    R: StateReg<S>,
 {
-    pub fn new(obj_id: ObjID) -> StateRef<S> {
+    pub fn new(obj_id: ObjID, reg: R) -> StateRef<S, R> {
         return StateRef {
+            reg,
             inner: UnsafeCell::new(RefInner {
                 obj_id,
-                type_id: S::id(),
+                class_id: S::id(),
+                reg_flag: false,
                 state: ptr::null_mut(),
             }),
             phantom: PhantomData,
         };
     }
 
-    pub fn type_id(&self) -> TypeID {
-        return self.inner_ref().type_id;
+    pub fn change_reg(&mut self, reg: R) -> Result<(), Error> {
+        if self.inner_ref().reg_flag {
+            return make_err("StateRef::change_reg() => registered");
+        }
+        self.reg = reg;
+        return Ok(());
+    }
+
+    pub fn class_id(&self) -> ClassID {
+        return self.inner_ref().class_id;
     }
 
     pub fn obj_id(&self) -> ObjID {
@@ -67,12 +84,30 @@ where
         return self.inner_ref().state.is_null();
     }
 
+    pub fn register(&self) -> Result<(), Error> {
+        if !self.inner_ref().reg_flag {
+            self.inner_ref().reg_flag = true;
+            return self.reg.register(self);
+        } else {
+            return make_err("StateRef::register()");
+        }
+    }
+
+    pub fn unregister(&self) -> Result<(), Error> {
+        if self.inner_ref().reg_flag {
+            self.inner_ref().reg_flag = false;
+            return self.reg.unregister(self);
+        } else {
+            return make_err("StateRef::unregister()");
+        }
+    }
+
     pub fn state(&self) -> Result<&S, Error> {
         let state = self.inner_ref().state;
         if !state.is_null() {
             return Ok(unsafe { &*(state as *const S) });
         } else {
-            return Err(format_err!("Empty state"));
+            return make_err("StateRef::state() => Empty state");
         }
     }
 
@@ -85,14 +120,69 @@ where
     }
 }
 
-impl<S> Drop for StateRef<S>
+impl<S, R> Drop for StateRef<S, R>
+where
+    S: StateData + StateDataStatic,
+    R: StateReg<S>,
+{
+    fn drop(&mut self) {
+        if self.inner_ref().reg_flag {
+            self.inner_ref().reg_flag = false;
+            let _ = self.reg.unregister(self);
+        }
+        self.inner_ref().obj_id = ObjID::invaild();
+        self.inner_ref().class_id = ClassID::invaild();
+        self.inner_ref().state = ptr::null_mut();
+    }
+}
+
+//
+// State Register
+//
+
+pub trait StateReg<S>
 where
     S: StateData + StateDataStatic,
 {
-    fn drop(&mut self) {
-        self.inner_ref().obj_id = ObjID::invaild();
-        self.inner_ref().type_id = TypeID::invaild();
-        self.inner_ref().state = ptr::null_mut();
+    fn register<R>(&self, refer: &StateRef<S, R>) -> Result<(), Error>
+    where
+        R: StateReg<S>;
+    fn unregister<R>(&self, refer: &StateRef<S, R>) -> Result<(), Error>
+    where
+        R: StateReg<S>;
+}
+
+#[derive(Debug)]
+pub struct StateLocalReg<S>
+where
+    S: StateData + StateDataStatic,
+{
+    bus: Rc<RefCell<StateBus>>,
+    phantom: PhantomData<S>,
+}
+
+impl<S> StateLocalReg<S>
+where
+    S: StateData + StateDataStatic,
+{
+    pub fn new(bus: Rc<RefCell<StateBus>>) -> StateLocalReg<S> {
+        return StateLocalReg {
+            bus,
+            phantom: PhantomData,
+        };
+    }
+}
+
+impl<S> StateReg<S> for StateLocalReg<S>
+where
+    S: StateData + StateDataStatic,
+{
+    fn register<R: StateReg<S>>(&self, refer: &StateRef<S, R>) -> Result<(), Error> {
+        return self.bus.try_borrow_mut()?.register(refer);
+    }
+
+    fn unregister<R: StateReg<S>>(&self, refer: &StateRef<S, R>) -> Result<(), Error> {
+        return self.bus.try_borrow_mut()?.unregister(refer);
     }
 }
 
@@ -128,24 +218,24 @@ where
 // }
 
 //
-// State Binder
+// State Bus
 //
 
 #[derive(Debug, PartialEq)]
-enum RefsMapValue {
+pub enum RefsMapValue {
     Single(*mut RefInner),
     Multi(Vec<*mut RefInner>),
 }
 
 #[derive(Debug)]
-pub struct StateBinder {
-    refers: HashMap<ObjID, RefsMapValue>,
+pub struct StateBus {
+    pub refers: HashMap<ObjID, RefsMapValue>,
     pool: Option<Box<StatePool>>,
 }
 
-impl StateBinder {
-    pub fn new() -> StateBinder {
-        return StateBinder {
+impl StateBus {
+    pub fn new() -> StateBus {
+        return StateBus {
             refers: HashMap::with_capacity(1024),
             pool: None,
         };
@@ -155,15 +245,16 @@ impl StateBinder {
         return self.refers.len();
     }
 
-    pub fn register<S>(&mut self, refer: &StateRef<S>) -> Result<(), Error>
+    pub fn register<S, R>(&mut self, refer: &StateRef<S, R>) -> Result<(), Error>
     where
         S: StateData + StateDataStatic,
+        R: StateReg<S>,
     {
-        if refer.type_id().is_invaild() {
-            return Err(format_err!("Invaild Object ID"));
+        if refer.class_id().is_invaild() {
+            return make_err("Invaild Object ID");
         }
         if refer.obj_id().is_invaild() {
-            return Err(format_err!("Invaild Object ID"));
+            return make_err("Invaild Object ID");
         }
 
         let inner = refer.inner_ptr();
@@ -183,13 +274,13 @@ impl StateBinder {
         } else {
             self.refers.insert(obj_id, RefsMapValue::Single(inner));
         }
-
         return Ok(());
     }
 
-    pub fn unregister<S>(&mut self, refer: &StateRef<S>)
+    pub fn unregister<S, R>(&mut self, refer: &StateRef<S, R>) -> Result<(), Error>
     where
         S: StateData + StateDataStatic,
+        R: StateReg<S>,
     {
         let inner = refer.inner_ptr();
         let obj_id = refer.obj_id();
@@ -208,32 +299,32 @@ impl StateBinder {
         if remove {
             self.refers.remove(&obj_id);
         }
+        return Ok(());
     }
 
     pub fn dispatch(&mut self, pool: Box<StatePool>) {
         self.pool = None;
         self.clear_all();
-        pool.for_each(|state| self.update(state));
+        pool.for_each(|_, state| self.update(state));
         self.pool = Some(pool);
     }
 
-    fn update(&mut self, state: *mut StateDataSuperField) {
-        fn compare(inner: &RefInner, header: &StateDataSuperField) -> bool {
-            return inner.type_id == header.type_id && inner.obj_id == header.obj_id;
+    fn update(&mut self, item: &StatePoolItem) {
+        fn compare(inner: &RefInner, item: &StatePoolItem) -> bool {
+            return inner.class_id == item.class_id && inner.obj_id == item.obj_id;
         }
 
-        let header = unsafe { &*state };
-        if let Some(value) = self.refers.get_mut(&header.obj_id) {
+        if let Some(value) = self.refers.get_mut(&item.obj_id) {
             match value {
                 RefsMapValue::Single(mut single) => unsafe {
-                    if compare(&*single, header) {
-                        (*single).state = state;
+                    if compare(&*single, item) {
+                        (*single).state = item.state;
                     }
                 },
                 RefsMapValue::Multi(multi) => unsafe {
                     for iter in multi {
-                        if compare(&**iter, header) {
-                            (**iter).state = state;
+                        if compare(&**iter, item) {
+                            (**iter).state = item.state;
                         }
                     }
                 },
@@ -258,72 +349,41 @@ impl StateBinder {
 }
 
 //
-// Thread Local
-//
-
-thread_local! {
-    pub(super) static STATE_BINDER: RefCell<StateBinder> = RefCell::new(StateBinder::new());
-}
-
-pub fn state_binder_register<S>(refer: &StateRef<S>) -> Result<(), Error>
-where
-    S: StateData + StateDataStatic,
-{
-    let mut result = Ok(());
-    STATE_BINDER.with(|binder| {
-        result = binder.borrow_mut().register(refer);
-    });
-    return result;
-}
-
-pub fn state_binder_unregister<S>(refer: &StateRef<S>)
-where
-    S: StateData + StateDataStatic,
-{
-    STATE_BINDER.with(|binder| {
-        binder.borrow_mut().unregister(refer);
-    });
-}
-
-pub fn state_binder_dispatch(pool: Box<StatePool>) {
-    STATE_BINDER.with(|binder| {
-        binder.borrow_mut().dispatch(pool);
-    });
-}
-
-//
 // tests
 //
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::id::TYPE_STAGE;
-    use crate::macros::state_data;
+    use crate as core;
+    use crate::derive::StateDataX;
+    use crate::id::CLASS_STAGE;
     use crate::state::StateLifecycle;
-    use crate::utils::mut_ptr;
+    use crate::util::mut_ptr;
 
-    #[state_data(TYPE_STAGE)]
-    #[derive(Debug, Default, PartialEq)]
-    struct StateTest {
+    #[derive(StateDataX, Debug, Default, PartialEq)]
+    #[class_id(CLASS_STAGE)]
+    struct DataTest {
+        obj_id: ObjID,
+        lifecycle: StateLifecycle,
         num: u32,
         text: String,
     }
 
-    impl StateData for StateTest {}
-
     #[test]
     fn test_state_ref() {
+        let sb = Rc::new(RefCell::new(StateBus::new()));
+
         let obj_id = ObjID::from(1234);
-        let refer = StateRef::<StateTest>::new(obj_id);
+        let refer = StateRef::<DataTest>::new(obj_id, StateLocalReg::new(sb.clone()));
         assert_eq!(refer.obj_id(), obj_id);
         assert_eq!(refer.is_empty(), true);
         assert!(refer.state().is_err());
 
-        let mut state = StateTest {
+        let mut state = DataTest {
             num: 0xABCD,
             text: String::from("HaHa"),
-            ..StateTest::default()
+            ..DataTest::default()
         };
         refer.inner_ref().state = mut_ptr(&mut state);
         assert_eq!(refer.is_empty(), false);
@@ -332,62 +392,79 @@ mod tests {
     }
 
     #[test]
-    fn test_state_binder() {
-        let mut sb = StateBinder::new();
-        let re1 = StateRef::<StateTest>::new(ObjID::from(123));
-        let re2 = StateRef::<StateTest>::new(ObjID::from(456));
-        let re3 = StateRef::<StateTest>::new(ObjID::from(456));
+    fn test_state_bus_register() {
+        let sb = Rc::new(RefCell::new(StateBus::new()));
+        {
+            let re1 = StateRef::<DataTest>::new(ObjID::from(123), StateLocalReg::new(sb.clone()));
+            let re2 = StateRef::<DataTest>::new(ObjID::from(456), StateLocalReg::new(sb.clone()));
+            let re3 = StateRef::<DataTest>::new(ObjID::from(456), StateLocalReg::new(sb.clone()));
 
-        let mut state = StateTest {
-            sup: StateTest::new_super(ObjID::invaild(), StateLifecycle::Updated),
+            re1.register().unwrap();
+            re2.register().unwrap();
+            re3.register().unwrap();
+            assert_eq!(
+                sb.borrow().refers[&re1.obj_id()],
+                RefsMapValue::Single(re1.inner_ptr())
+            );
+            assert_eq!(
+                sb.borrow().refers[&re2.obj_id()],
+                RefsMapValue::Multi(vec![re2.inner_ptr(), re3.inner_ptr()]),
+            );
+
+            sb.borrow_mut().unregister(&re1).unwrap();
+            assert!(sb.borrow().refers.get(&re1.obj_id()).is_none());
+
+            sb.borrow_mut().unregister(&re2).unwrap();
+            assert_eq!(
+                sb.borrow().refers[&re3.obj_id()],
+                RefsMapValue::Multi(vec![re3.inner_ptr()]),
+            );
+        }
+        assert!(sb.borrow().refers.get(&ObjID::from(456)).is_none());
+    }
+
+    #[test]
+    fn test_state_bus_update() {
+        let sb = Rc::new(RefCell::new(StateBus::new()));
+
+        let re1 = StateRef::<DataTest>::new(ObjID::from(123), StateLocalReg::new(sb.clone()));
+        let re2 = StateRef::<DataTest>::new(ObjID::from(456), StateLocalReg::new(sb.clone()));
+        let re3 = StateRef::<DataTest>::new(ObjID::from(456), StateLocalReg::new(sb.clone()));
+
+        re1.register().unwrap();
+        re2.register().unwrap();
+        re3.register().unwrap();
+
+        let mut state = DataTest {
+            obj_id: ObjID::invaild(),
+            lifecycle: StateLifecycle::Updated,
             num: 0xABCD,
             text: String::from("HaHa"),
         };
 
-        // register
-        sb.register(&re1).unwrap();
-        sb.register(&re2).unwrap();
-        sb.register(&re3).unwrap();
-        assert_eq!(
-            sb.refers[&re1.obj_id()],
-            RefsMapValue::Single(re1.inner_ptr())
-        );
-        assert_eq!(
-            sb.refers[&re2.obj_id()],
-            RefsMapValue::Multi(vec![re2.inner_ptr(), re3.inner_ptr()]),
-        );
-
-        // update
-        sb.update(mut_ptr(&mut state));
+        let mut item = StatePoolItem {
+            state: mut_ptr(&mut state),
+            vtable: ptr::null_mut(),
+            class_id: DataTest::id(),
+            obj_id: ObjID::invaild(),
+            lifecycle: StateLifecycle::Updated,
+        };
+        sb.borrow_mut().update(&item);
         assert!(re1.state().is_err());
         assert!(re3.state().is_err());
 
-        state.sup = StateTest::new_super(ObjID::from(123), StateLifecycle::Updated);
-        sb.update(mut_ptr(&mut state));
+        item.obj_id = ObjID::from(123);
+        sb.borrow_mut().update(&item);
         assert_eq!(re1.state().unwrap().num, 0xABCD);
 
-        state.sup = StateTest::new_super(ObjID::from(456), StateLifecycle::Updated);
-        sb.update(mut_ptr(&mut state));
+        item.obj_id = ObjID::from(456);
+        sb.borrow_mut().update(&item);
         assert_eq!(re2.state().unwrap().num, 0xABCD);
         assert_eq!(re3.state().unwrap().num, 0xABCD);
 
-        // clear_all
-        sb.clear_all();
+        sb.borrow_mut().clear_all();
         assert!(re1.state().is_err());
         assert!(re2.state().is_err());
         assert!(re3.state().is_err());
-
-        // unregister
-        sb.unregister(&re1);
-        assert!(sb.refers.get(&re1.obj_id()).is_none());
-        sb.unregister(&re1);
-
-        sb.unregister(&re2);
-        assert_eq!(
-            sb.refers[&re3.obj_id()],
-            RefsMapValue::Multi(vec![re3.inner_ptr()]),
-        );
-        sb.unregister(&re3);
-        assert!(sb.refers.get(&re3.obj_id()).is_none());
     }
 }
