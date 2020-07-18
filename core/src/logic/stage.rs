@@ -1,16 +1,22 @@
-use crate::id::{ObjID, TYPE_STAGE, TypeID};
-use crate::logic::{logic_obj, LogicObj};
-use crate::state::{state_data, StateData, StateLifecycle, StatePool};
-use crate::utils::Fixed64;
+use super::base::{CollisionHandle, INVAILD_COLLISION_HANDLE};
+use super::{LogicObj, LogicObjX};
+use crate as core;
+use crate::id::{ObjID, CLASS_STAGE};
+use crate::logic::base::CollideContext;
+use crate::logic::{NewContext, StateContext, UpdateContext};
+use crate::state::{StateDataX, StateLifecycle};
+use crate::util::RcCell;
 use failure::Error;
-use na::Vector3;
+use na::{Isometry3, Vector3};
+use ncollide3d::pipeline::CollisionGroups;
 use ncollide3d::shape::{Plane, ShapeHandle};
-use std::time::Duration;
 
+#[derive(LogicObjX)]
+#[class_id(CLASS_STAGE)]
 pub struct LogicStage {
     obj_id: ObjID,
     lifecycle: StateLifecycle,
-    pub(crate) shape: ShapeHandle<Fixed64>,
+    coll_handle: CollisionHandle,
 }
 
 impl Drop for LogicStage {
@@ -18,37 +24,42 @@ impl Drop for LogicStage {
 }
 
 impl LogicStage {
-    pub(super) fn new(obj_id: ObjID) -> Rc<LogicStage> {
-        return Rc::new(LogicStage {
-            obj_id,
+    pub(super) fn new(ctx: &mut NewContext) -> RcCell<LogicStage> {
+        let stage = RcCell::new(LogicStage {
+            obj_id: ctx.obj_id,
             lifecycle: StateLifecycle::Created,
-            shape: ShapeHandle::new(Plane::new(Vector3::z_axis())),
+            coll_handle: INVAILD_COLLISION_HANDLE,
         });
+        let (coll_handle, _) = ctx.new_collision(
+            Isometry3::new(na::zero(), na::zero()),
+            ShapeHandle::new(Plane::new(Vector3::y_axis())),
+            CollisionGroups::new(),
+            stage.clone(),
+        );
+        stage.borrow_mut().coll_handle = coll_handle;
+        return stage;
     }
 }
 
 impl LogicObj for LogicStage {
-    fn obj_id(&self) -> ObjID {
-        return self.obj_id;
-    }
-
-    fn type_id(&self) -> TypeID {
-        return TYPE_STAGE;
-    }
-
-    fn collide(&mut self, _: Rc<dyn LogicObj>) -> Result<(), Error> {
+    fn collide(&mut self, _ctx: &mut CollideContext) -> Result<(), Error> {
         return Ok(());
     }
 
-    fn update(&mut self, pool: &mut Box<StatePool>, _: Duration) -> Result<(), Error> {
-        let _ = pool.make::<StateStage>(self.obj_id(), self.lifecycle);
+    fn update(&mut self, _ctx: &mut UpdateContext) -> Result<(), Error> {
+        return Ok(());
+    }
+
+    fn state(&mut self, ctx: &mut StateContext) -> Result<(), Error> {
+        let _ = ctx.make::<StateStage>(self.obj_id, self.lifecycle);
         self.lifecycle = StateLifecycle::Updated;
         return Ok(());
     }
 }
 
-#[state_data(TYPE_STAGE)]
-#[derive(Debug, Default)]
-pub struct StateStage {}
-
-impl StateData for StateStage {}
+#[derive(StateDataX, Debug, Default)]
+#[class_id(CLASS_STAGE)]
+pub struct StateStage {
+    pub obj_id: ObjID,
+    pub lifecycle: StateLifecycle,
+}
