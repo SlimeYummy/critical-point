@@ -64,7 +64,7 @@ where
         };
     }
 
-    pub fn change_reg(&mut self, reg: R) -> Result<(), Error> {
+    pub fn set_reg(&mut self, reg: R) -> Result<(), Error> {
         if self.inner_ref().reg_flag {
             return make_err("StateRef::change_reg() => registered");
         }
@@ -291,7 +291,9 @@ impl StateBus {
                     remove = *single == inner;
                 }
                 RefsMapValue::Multi(multi) => {
-                    multi.remove_item(&inner);
+                    if let Some(pos) = multi.iter().position(|x| *x == inner) {
+                        multi.remove(pos);
+                    }
                     remove = multi.is_empty();
                 }
             };

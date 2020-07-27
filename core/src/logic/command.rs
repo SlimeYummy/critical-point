@@ -7,6 +7,7 @@ pub enum Command {
     NewStage(CmdNewStage),
     NewCharacter(CmdNewCharacter),
     MoveCharacter(CmdMoveCharacter),
+    JumpCharacter(CmdJumpCharacter),
 }
 
 #[derive(Clone, Debug)]
@@ -24,4 +25,10 @@ pub struct CmdNewCharacter {
 pub struct CmdMoveCharacter {
     pub obj_id: ObjID,
     pub direction: Vector2<Fx>,
+    pub is_moving: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct CmdJumpCharacter {
+    pub obj_id: ObjID,
 }
