@@ -5,6 +5,7 @@ use crate::state::StatePool;
 use crate::util::{make_err, RcCell};
 use failure::{format_err, Error};
 use m::{fx, Fx};
+use na::Vector2;
 use ncollide3d::pipeline::world::CollisionWorld;
 use std::collections::HashMap;
 
@@ -102,17 +103,29 @@ impl LogicEngine {
     pub fn operate(&mut self, op: &Operation) -> Result<Command, Error> {
         return match op {
             Operation::MoveCharacter(op) => self.op_move_character(op),
+            Operation::JumpCharacter(op) => self.op_jump_character(op),
         };
     }
 
     fn op_move_character(&mut self, op: &OpMoveCharacter) -> Result<Command, Error> {
         if let Some(chara) = &self.main_character {
-            return Ok(Command::MoveCharacter(CmdMoveCharacter{
+            return Ok(Command::MoveCharacter(CmdMoveCharacter {
                 obj_id: chara.borrow().obj_id(),
-                direction: op.direction,
+                direction: Vector2::new(fx(op.direction.x), fx(op.direction.y)),
+                is_moving: op.is_moving,
             }));
         } else {
             return make_err("LogicEngine::op_move_character() => not found");
+        }
+    }
+
+    fn op_jump_character(&mut self, _op: &OpJumpCharacter) -> Result<Command, Error> {
+        if let Some(chara) = &self.main_character {
+            return Ok(Command::JumpCharacter(CmdJumpCharacter {
+                obj_id: chara.borrow().obj_id(),
+            }));
+        } else {
+            return make_err("LogicEngine::op_jump_character() => not found");
         }
     }
 }
@@ -123,14 +136,8 @@ impl LogicEngine {
             Command::NewStage(cmd) => self.cmd_new_stage(cmd)?,
             Command::NewCharacter(cmd) => self.cmd_new_character(cmd)?,
             Command::MoveCharacter(cmd) => self.cmd_move_character(cmd)?,
+            Command::JumpCharacter(cmd) => self.cmd_jump_character(cmd)?,
         };
-        return Ok(());
-    }
-
-    pub fn command_all(&mut self, cmds: Vec<Command>) -> Result<(), Error> {
-        for cmd in cmds.iter() {
-            self.command(cmd)?;
-        }
         return Ok(());
     }
 
@@ -165,6 +172,15 @@ impl LogicEngine {
             return Ok(());
         } else {
             return make_err("LogicEngine::cmd_move_character() => not found");
+        }
+    }
+
+    fn cmd_jump_character(&mut self, cmd: &CmdJumpCharacter) -> Result<(), Error> {
+        if let Some(chara) = self.characters.get(&cmd.obj_id) {
+            chara.borrow_mut().jump(cmd);
+            return Ok(());
+        } else {
+            return make_err("LogicEngine::cmd_jump_character() => not found");
         }
     }
 }

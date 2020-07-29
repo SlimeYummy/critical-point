@@ -74,15 +74,14 @@ mod tests {
         chara.state.register().unwrap();
 
         // tick 1
+        engine.command(&Command::NewStage(CmdNewStage {})).unwrap();
         engine
-            .command_all(vec![
-                Command::NewStage(CmdNewStage {}),
-                Command::NewCharacter(CmdNewCharacter {
-                    position: Point3::new(fx(0), fx(0.1), fx(0)),
-                    direction: Vector2::new(fx(0), fx(1)),
-                    speed: fx(0.5),
-                }),
-            ])
+            .command(&Command::NewCharacter(CmdNewCharacter {
+                position: Point3::new(fx(0), fx(0.1), fx(0)),
+                direction: Vector2::new(fx(0), fx(1)),
+                speed: fx(0.5),
+                is_main: true,
+            }))
             .unwrap();
         let pool = engine.tick().unwrap();
         bus.borrow_mut().dispatch(pool);
@@ -104,7 +103,7 @@ mod tests {
 
         // tick 2
         engine
-            .command(Command::MoveCharacter(CmdMoveCharacter {
+            .command(&Command::MoveCharacter(CmdMoveCharacter {
                 obj_id: ObjID::from(100001),
                 direction: Vector2::new(fx(10), fx(0)),
             }))

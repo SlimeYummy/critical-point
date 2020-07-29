@@ -3,15 +3,16 @@ use super::{LogicObj, LogicObjX, LogicStage};
 use crate as core;
 use crate::id::{ObjID, CLASS_CHARACTER};
 use crate::logic::base::CollideContext;
-use crate::logic::{CmdMoveCharacter, CmdNewCharacter, NewContext, StateContext, UpdateContext};
+use crate::logic::{CmdMoveCharacter, CmdNewCharacter, NewContext, StateContext, UpdateContext, CmdJumpCharacter};
 use crate::state::{StateDataX, StateLifecycle};
 use crate::util::RcCell;
 use failure::Error;
 use m::{fx, Fx};
-use na::{Isometry3, Point3, Vector2, Vector3};
+use na::{Isometry3, Point3, Vector2, Vector3, Rotation3, Translation3, UnitQuaternion};
 use ncollide3d::pipeline::CollisionGroups;
 use ncollide3d::query::{Proximity, Ray};
 use ncollide3d::shape::{Capsule, ShapeHandle};
+use euclid::Vector3D;
 
 #[derive(LogicObjX)]
 #[class_id(CLASS_CHARACTER)]
@@ -19,10 +20,13 @@ pub struct LogicCharacter {
     obj_id: ObjID,
     lifecycle: StateLifecycle,
     coll_handle: CollisionHandle,
+    p_init_isometry: Isometry3<Fx>,
     p_direction: Vector2<Fx>,
+    p_is_moving: bool,
     p_speed: Fx,
-    v_position: Point3<Fx>,
+    v_isometry: Isometry3<Fx>,
     v_on_ground: u32,
+    v_gravity_speed: Fx,
 }
 
 impl Drop for LogicCharacter {
@@ -35,14 +39,20 @@ impl LogicCharacter {
             obj_id: ctx.obj_id,
             lifecycle: StateLifecycle::Created,
             coll_handle: INVAILD_COLLISION_HANDLE,
+            p_init_isometry: Isometry3::new(Vector3::new(fx(0), fx(0.7), fx(0)), na::zero()),
             p_direction: cmd.direction,
+            p_is_moving: false,
             p_speed: cmd.speed,
-            v_position: cmd.position,
+            v_isometry: Isometry3::new(
+                Vector3::new(cmd.position.x, cmd.position.y, cmd.position.z),
+                na::zero(),
+            ),
             v_on_ground: 0,
+            v_gravity_speed: fx(0),
         });
         let (coll_handle, _) = ctx.new_collision(
-            Isometry3::new(na::zero(), na::zero()),
-            ShapeHandle::new(Capsule::new(fx(0.9), fx(0.5))),
+            chara.borrow().v_isometry * chara.borrow().p_init_isometry,
+            ShapeHandle::new(Capsule::new(fx(0.35), fx(0.5))),
             CollisionGroups::new(),
             chara.clone(),
         );
@@ -52,6 +62,12 @@ impl LogicCharacter {
 
     pub(crate) fn mov(&mut self, cmd: &CmdMoveCharacter) {
         self.p_direction = cmd.direction;
+        self.p_is_moving = cmd.is_moving;
+    }
+
+    pub(crate) fn jump(&mut self, _cmd: &CmdJumpCharacter) {
+        self.v_on_ground = 0;
+        self.v_gravity_speed += fx(8);
     }
 }
 
@@ -61,45 +77,50 @@ impl LogicObj for LogicCharacter {
             if ctx.prev_status == Proximity::Disjoint {
                 self.v_on_ground += 1;
             }
-            if ctx.new_status != Proximity::Disjoint {
-                self.v_on_ground -= 1;
+            if ctx.new_status == Proximity::Disjoint {
+                self.v_on_ground = u32::max(self.v_on_ground - 1, 0);
             }
-            // let stage = other_coll
-            //     .data()
-            //     .cast::<LogicStage>()
-            //     .ok_or_else(|| format_err!("LogicCharacter.collide(LogicStage)"))?;
-            // let ray = Ray::<Fx>::new(self.v_position.clone(), Vector3::new(fx(0), fx(-1), fx(0)));
-            // if let Some(standing) = other_coll.shape().toi_and_normal_with_ray(
-            //     other_coll.position(),
-            //     &ray,
-            //     fx(1000),
-            //     true,
-            // ) {
-            //     println!("{:?}", self.p_direction);
-            //     self.v_direction = m::direction_on_plane(&standing.normal, &self.p_direction);
-            // }
         }
         return Ok(());
     }
 
     fn update(&mut self, ctx: &mut UpdateContext) -> Result<(), Error> {
-        let ray = Ray::<Fx>::new(self.v_position.clone(), Vector3::new(fx(0), fx(-1), fx(0)));
-
-        let mut direction = Vector3::new(self.p_direction.x, fx(0), self.p_direction.y);
-        if self.v_on_ground != 0 {
-            if let Some(standing) = ctx.interference_with_ray(&ray, &CollisionGroups::new()) {
-                direction = m::direction_on_plane(&standing.inter.normal, &self.p_direction);
-            };
+        // gravity
+        if self.v_on_ground > 0 {
+            self.v_gravity_speed = fx(0);
+        } else {
+            self.v_gravity_speed += fx(-10) * ctx.duration;
         };
+        let gravity_speed = Vector3::new(fx(0), self.v_gravity_speed, fx(0));
 
-        if self.p_speed != fx(0) {
-            let distance = self.p_speed * ctx.duration;
-            let transition = direction * distance;
-            self.v_position = self.v_position + transition;
+        // move
+        let mut move_speed = Vector3::new(fx(0), fx(0), fx(0));
+        if self.p_is_moving {
+            let ray = Ray::<Fx>::new(
+                m::is3_to_p3(self.v_isometry),
+                Vector3::new(fx(0), fx(-1), fx(0)),
+            );
+            let mut direction = Vector3::new(self.p_direction.x, fx(0), self.p_direction.y);
+            if self.v_on_ground > 0 {
+                if let Some(standing) = ctx.interference_with_ray(&ray, &CollisionGroups::new()) {
+                    direction = m::direction_on_plane(&standing.inter.normal, &self.p_direction);
+                };
+            };
+            move_speed = direction * self.p_speed;
         }
+
+        // isometry
+        let pt = self.v_isometry.translation.vector + (gravity_speed + move_speed) * ctx.duration;
+        let translation = Translation3::from(pt);
+        let quaternion = UnitQuaternion::rotation_between(
+            &Vector3::new(fx(0), fx(0), fx(-1)),
+            &Vector3::new(self.p_direction.x, fx(0), self.p_direction.y),
+        ).unwrap();
+        self.v_isometry = Isometry3::from_parts(translation, quaternion);
+
         ctx.update_collision(
             self.coll_handle,
-            Isometry3::new(m::p3_to_v3(self.v_position), na::zero()),
+            self.v_isometry * self.p_init_isometry,
         )?;
         return Ok({});
     }
@@ -107,7 +128,7 @@ impl LogicObj for LogicCharacter {
     fn state(&mut self, ctx: &mut StateContext) -> Result<(), Error> {
         let state = ctx.make::<StateCharacter>(self.obj_id, self.lifecycle);
         self.lifecycle = StateLifecycle::Updated;
-        state.position = self.v_position;
+        state.isometry = self.v_isometry;
         return Ok(());
     }
 }
@@ -117,15 +138,15 @@ impl LogicObj for LogicCharacter {
 pub struct StateCharacter {
     pub obj_id: ObjID,
     pub lifecycle: StateLifecycle,
-    pub position: Point3<Fx>,
+    pub isometry: Isometry3<Fx>,
 }
 
 impl Default for StateCharacter {
     fn default() -> StateCharacter {
         return StateCharacter {
-            position: Point3::origin(),
             obj_id: ObjID::default(),
             lifecycle: StateLifecycle::default(),
+            isometry: Isometry3::identity(),
         };
     }
 }
