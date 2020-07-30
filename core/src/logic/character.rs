@@ -113,8 +113,8 @@ impl LogicObj for LogicCharacter {
         let pt = self.v_isometry.translation.vector + (gravity_speed + move_speed) * ctx.duration;
         let translation = Translation3::from(pt);
         let quaternion = UnitQuaternion::rotation_between(
-            &Vector3::new(fx(0), fx(0), fx(-1)),
             &Vector3::new(self.p_direction.x, fx(0), self.p_direction.y),
+            &Vector3::new(fx(0), fx(0), fx(-1)),
         ).unwrap();
         self.v_isometry = Isometry3::from_parts(translation, quaternion);
 

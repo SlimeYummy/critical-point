@@ -4,6 +4,7 @@ mod command;
 mod engine;
 mod operation;
 mod stage;
+mod lerper;
 
 pub use crate::derive::LogicObjX;
 pub use base::{LogicObj, LogicObjStatic, LogicObjSuper, NewContext, StateContext, UpdateContext};
