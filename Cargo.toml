@@ -1,6 +1,7 @@
 [workspace]
 members = [
+    "derive",
+    "math",
     "core",
-    "macros",
     "plugin_gd",
 ]
