@@ -5,9 +5,10 @@ authors = ["FenQiDian <email@fenqi.moe>"]
 edition = "2018"
 
 [dependencies]
-alga = "0.9"
 approx = "0.3"
-euclid = "0.20"
-fixed = "1"
+cordic = "0.1"
+fixed = { version = "1", features = [ "serde" ] }
 nalgebra = "0.21"
+num-traits = { version = "0.2.11", features = ["libm"] }
+serde = "1"
 simba = { version = "0.1", features = [ "partial_fixed_point_support" ] }
