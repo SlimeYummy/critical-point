@@ -1,4 +1,4 @@
-use crate::id::{ObjID, ObjectIDGener};
+use crate::id::{ObjID, ObjIDGener};
 use crate::logic::base::CollideContext;
 use crate::logic::*;
 use crate::state::StatePool;
@@ -13,7 +13,7 @@ const STATE_POOL_SIZE: usize = 1024 * 1024 * 4;
 
 pub struct LogicEngine {
     duration: Fx,
-    id_gener: ObjectIDGener,
+    id_gener: ObjIDGener,
     stage: Option<RcCell<LogicStage>>,
     main_character: Option<RcCell<LogicCharacter>>,
     characters: HashMap<ObjID, RcCell<LogicCharacter>>,
@@ -28,7 +28,7 @@ impl LogicEngine {
     pub fn new(duration: Fx) -> LogicEngine {
         return LogicEngine {
             duration,
-            id_gener: ObjectIDGener::new(),
+            id_gener: ObjIDGener::new(),
             stage: None,
             main_character: None,
             characters: HashMap::new(),

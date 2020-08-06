@@ -1,4 +1,4 @@
-use m::{Fx, fx};
+use m::{fx, Fx};
 use nalgebra::{Vector2, Vector3};
 
 pub enum FieldType {
@@ -68,10 +68,10 @@ pub struct LinearLerper1D {
     frames: u32,
 }
 
-impl Lerper1D for ConstantLerper1D {
+impl Lerper1D for LinearLerper1D {
     fn lerp(&self, frames: u32) -> Fx {
         let progress = fx(frames) / fx(self.frames);
-        return (fx(1) - progress) * self.begin + progress * self.end;
+        return self.begin * (fx(1) - progress) + self.end * progress;
     }
 }
 
@@ -82,10 +82,10 @@ pub struct LinearLerper2D {
     frames: u32,
 }
 
-impl Lerper2D for ConstantLerper2D {
+impl Lerper2D for LinearLerper2D {
     fn lerp(&self, frames: u32) -> Vector2<Fx> {
         let progress = fx(frames) / fx(self.frames);
-        return (fx(1) - progress) * self.begin + progress * self.end;
+        return self.begin * (fx(1) - progress) + self.end * progress;
     }
 }
 
@@ -96,9 +96,9 @@ pub struct LinearLerper3D {
     frames: u32,
 }
 
-impl Lerper3D for ConstantLerper3D {
+impl Lerper3D for LinearLerper3D {
     fn lerp(&self, frames: u32) -> Vector3<Fx> {
         let progress = fx(frames) / fx(self.frames);
-        return (fx(1) - progress) * self.begin + progress * self.end;
+        return self.begin * (fx(1) - progress) + self.end * progress;
     }
 }

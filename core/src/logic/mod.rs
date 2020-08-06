@@ -2,9 +2,9 @@ mod base;
 mod character;
 mod command;
 mod engine;
+mod lerper;
 mod operation;
 mod stage;
-mod lerper;
 
 pub use crate::derive::LogicObjX;
 pub use base::{LogicObj, LogicObjStatic, LogicObjSuper, NewContext, StateContext, UpdateContext};
@@ -21,7 +21,7 @@ mod tests {
     use crate::id::{ObjID, CLASS_CHARACTER, CLASS_STAGE};
     use crate::state::{StateBus, StateLifecycle, StateLocalReg, StateOwnerX, StateRef};
     use m::fx;
-    use na::{Point3, Vector2};
+    use na::{Point3, Vector2, Isometry3};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -98,8 +98,9 @@ mod tests {
             StateLifecycle::Created
         );
         assert_eq!(
-            chara.state.state().unwrap().position,
-            Point3::new(fx(0), fx(0.1), fx(1.0 / 20.0 * 0.5))
+            chara.state.state().unwrap().isometry,
+            Isometry3::new(na::zero(), na::zero()),
+            // Point3::new(fx(0), fx(0.1), fx(1.0 / 20.0 * 0.5))
         );
 
         // tick 2
@@ -107,6 +108,7 @@ mod tests {
             .command(&Command::MoveCharacter(CmdMoveCharacter {
                 obj_id: ObjID::from(100001),
                 direction: Vector2::new(fx(10), fx(0)),
+                is_moving: true,
             }))
             .unwrap();
         let pool = engine.tick().unwrap();
@@ -123,8 +125,9 @@ mod tests {
             StateLifecycle::Updated
         );
         assert_eq!(
-            chara.state.state().unwrap().position,
-            Point3::new(fx(1.0 / 20.0 * 0.5), fx(0.1), fx(1.0 / 20.0 * 0.5))
+            chara.state.state().unwrap().isometry,
+            Isometry3::new(na::zero(), na::zero()),
+            // Point3::new(fx(1.0 / 20.0 * 0.5), fx(0.1), fx(1.0 / 20.0 * 0.5))
         );
     }
 }
