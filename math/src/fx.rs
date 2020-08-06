@@ -1,19 +1,19 @@
-#![allow(dead_code)]
-
 use approx::{AbsDiffEq, RelativeEq, UlpsEq};
 use fixed::traits::ToFixed;
 use fixed::types::I40F24;
 use num_traits::{Bounded, FromPrimitive, Num, One, Signed, Zero};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use rand::distributions::{Distribution, OpenClosed01, Standard};
+use rand::Rng;
 use serde::de::{self, Visitor};
-use simba::simd::{PrimitiveSimdValue, SimdValue};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use simba::scalar::{ComplexField, Field, RealField, SubsetOf};
+use simba::simd::{PrimitiveSimdValue, SimdValue};
 use std::cmp::Ordering;
+use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
-use std::fmt::{self, Formatter, Debug, Display};
 
 #[inline(always)]
 pub fn fx<N: ToFixed>(num: N) -> Fx {
@@ -55,17 +55,17 @@ impl PartialOrd for Fx {
     }
 }
 
-impl rand::distributions::Distribution<Fx> for rand::distributions::Standard {
+impl Distribution<Fx> for Standard {
     #[inline]
-    fn sample<'a, G: rand::Rng + ?Sized>(&self, rng: &mut G) -> Fx {
+    fn sample<'a, G: Rng + ?Sized>(&self, rng: &mut G) -> Fx {
         let bits = rng.gen();
         Fx(I40F24::from_bits(bits))
     }
 }
 
-impl rand::distributions::Distribution<Fx> for rand::distributions::OpenClosed01 {
+impl Distribution<Fx> for OpenClosed01 {
     #[inline]
-    fn sample<'a, G: rand::Rng + ?Sized>(&self, rng: &mut G) -> Fx {
+    fn sample<'a, G: Rng + ?Sized>(&self, rng: &mut G) -> Fx {
         let val: f64 = rng.gen();
         Fx(I40F24::from_num(val))
     }
