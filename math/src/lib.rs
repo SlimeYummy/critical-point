@@ -1,12 +1,18 @@
-extern crate alga;
+#![allow(dead_code)]
+
 extern crate approx;
-extern crate euclid;
+extern crate cordic;
 extern crate fixed;
 extern crate nalgebra as na;
+extern crate num_traits;
+extern crate rand;
+extern crate serde;
 extern crate simba;
 
-mod num;
+mod cast;
+pub mod fx;
 mod vector;
 
-pub use num::*;
+pub use cast::*;
+pub use fx::*;
 pub use vector::*;
