@@ -4,4 +4,4 @@ mod class;
 mod id;
 
 pub use class::*;
-pub use id::{ClassID, ObjID, ObjectIDGener};
+pub use id::{ClassID, ObjID, ObjIDGener, ResID};

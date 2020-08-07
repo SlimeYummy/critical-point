@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use serde::{Deserialize, Serialize};
+
 //
 // Object ID
 //
@@ -41,13 +43,13 @@ impl ObjID {
     }
 }
 
-pub struct ObjectIDGener {
+pub struct ObjIDGener {
     counter: u64,
 }
 
-impl ObjectIDGener {
-    pub fn new() -> ObjectIDGener {
-        return ObjectIDGener { counter: 100000 };
+impl ObjIDGener {
+    pub fn new() -> ObjIDGener {
+        return ObjIDGener { counter: 100000 };
     }
 
     pub fn gen(&mut self) -> ObjID {
@@ -103,6 +105,47 @@ impl ClassID {
 }
 
 //
+// Resource ID
+//
+
+#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, PartialOrd, Serialize)]
+pub struct ResID(u64);
+
+impl Eq for ResID {}
+
+impl From<u64> for ResID {
+    fn from(num: u64) -> ResID {
+        return ResID(num);
+    }
+}
+
+impl From<ResID> for u64 {
+    fn from(id: ResID) -> u64 {
+        return id.0;
+    }
+}
+
+impl Default for ResID {
+    fn default() -> ResID {
+        return ResID(0xFFFF_FFFF_FFFF_FFFF);
+    }
+}
+
+impl ResID {
+    pub fn invaild() -> ResID {
+        return ResID(0xFFFF_FFFF_FFFF_FFFF);
+    }
+
+    pub fn is_vaild(&self) -> bool {
+        return self.0 < Self::invaild().0;
+    }
+
+    pub fn is_invaild(&self) -> bool {
+        return self.0 >= Self::invaild().0;
+    }
+}
+
+//
 // tests
 //
 
@@ -112,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_object_id_normal() {
-        let mut gener = ObjectIDGener::new();
+        let mut gener = ObjIDGener::new();
 
         assert_eq!(gener.gen(), ObjID(100000));
         assert_eq!(gener.gen(), ObjID(100001));
@@ -128,10 +171,20 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn test_object_id_panic() {
-        let mut gener = ObjectIDGener::new();
-        gener.counter = 0xFFFF_FFFF_FFFF_FFFF;
-        let _ = gener.gen();
+    fn test_class_id_normal() {
+        assert_eq!(ClassID::from(1234), ClassID(1234));
+        assert_eq!(ClassID::from(0xFFFF_FFFF), ClassID::invaild());
+
+        assert_eq!(ClassID(1111).is_vaild(), true);
+        assert_eq!(ClassID::invaild().is_vaild(), false);
+    }
+
+    #[test]
+    fn test_res_id_normal() {
+        assert_eq!(ResID::from(1234), ResID(1234));
+        assert_eq!(ResID::from(0xFFFF_FFFF_FFFF_FFFF), ResID::invaild());
+
+        assert_eq!(ResID(1111).is_vaild(), true);
+        assert_eq!(ResID::invaild().is_vaild(), false);
     }
 }

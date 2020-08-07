@@ -11,6 +11,7 @@
 
 extern crate alga;
 extern crate approx;
+extern crate derivative;
 extern crate derive;
 extern crate euclid;
 extern crate failure;
@@ -21,10 +22,12 @@ extern crate nalgebra as na;
 extern crate ncollide3d;
 extern crate serde;
 extern crate serde_json;
+extern crate serde_yaml;
 extern crate simba;
 
 pub mod agent;
 pub mod id;
 pub mod logic;
+pub mod resource;
 pub mod state;
 pub mod util;
