@@ -1,6 +1,5 @@
 #![feature(allocator_api)]
 #![feature(alloc_layout_extra)]
-#![feature(box_into_raw_non_null)]
 #![feature(coerce_unsized)]
 #![feature(dispatch_from_dyn)]
 #![feature(negative_impls)]
