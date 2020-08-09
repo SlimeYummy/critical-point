@@ -9,7 +9,7 @@ A logic engine for 3D ACT games.
 
 ## Modules
 
-- macro: rust derive macros.
+- derive: rust derive macros.
 - math: math library include vector, matrix and e.g.
 - core: core library.
 - plugin_x: plugins for game engine.
