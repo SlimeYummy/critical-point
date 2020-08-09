@@ -1,11 +1,11 @@
 use super::ResShape;
+use derivative::Derivative;
 use fixed::traits::ToFixed;
 use math::Fx;
 use na::geometry::Isometry3;
+use ncollide3d::shape::ShapeHandle;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use ncollide3d::shape::ShapeHandle;
-use derivative::Derivative;
 
 #[derive(Clone, Derivative, Deserialize, Serialize)]
 #[derivative(Debug)]
@@ -23,7 +23,7 @@ pub struct ResCharacter {
     pub elemental_attack: u32,
     pub elemental_defense: u32,
     pub arcane_attack: u32,
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     pub arcane_defense: u32,
     pub skill_ids: Vec<String>,
     #[serde(default)]

@@ -1,3 +1,10 @@
 language: rust
 rust:
   - nightly
+os:
+  - linux
+  - windows
+script:
+  # - cargo fmt --all -- --check
+  - cargo build --verbose --all
+  - cargo test --verbose --all

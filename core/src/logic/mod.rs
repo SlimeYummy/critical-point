@@ -21,7 +21,7 @@ mod tests {
     use crate::id::{ObjID, CLASS_CHARACTER, CLASS_STAGE};
     use crate::state::{StateBus, StateLifecycle, StateLocalReg, StateOwnerX, StateRef};
     use m::fx;
-    use na::{Point3, Vector2, Isometry3};
+    use na::{Isometry3, Point3, Vector2};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -65,6 +65,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_logic_all() {
         let mut engine = LogicEngine::new(fx(1.0 / 20.0));
         let bus = Rc::new(RefCell::new(StateBus::new()));

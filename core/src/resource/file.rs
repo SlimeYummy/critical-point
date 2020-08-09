@@ -1,8 +1,8 @@
 use super::object::{ResCharacter, ResSkill};
 use failure::{format_err, Error};
 use serde::{Deserialize, Serialize};
-use serde_yaml;
 use serde_json;
+use serde_yaml;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 
@@ -35,13 +35,17 @@ impl ResCache {
 
     pub fn from_yaml(path: &str) -> Result<Box<ResCache>, Error> {
         let mut cache = Box::new(ResCache::default());
-        cache.parse(path, |file_name| Ok(serde_yaml::from_reader(File::open(file_name)?)?))?;
+        cache.parse(path, |file_name| {
+            Ok(serde_yaml::from_reader(File::open(file_name)?)?)
+        })?;
         return Ok(cache);
     }
 
     pub fn from_json(path: &str) -> Result<Box<ResCache>, Error> {
         let mut cache = Box::new(ResCache::default());
-        cache.parse(path, |file_name| Ok(serde_json::from_reader(File::open(file_name)?)?))?;
+        cache.parse(path, |file_name| {
+            Ok(serde_json::from_reader(File::open(file_name)?)?)
+        })?;
         return Ok(cache);
     }
 
@@ -85,7 +89,5 @@ mod tests {
     }
 
     #[test]
-    fn test_from_json() {
-
-    }
+    fn test_from_json() {}
 }
