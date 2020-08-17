@@ -23,6 +23,12 @@ pub fn fx<N: ToFixed>(num: N) -> Fx {
 #[derive(Clone, Copy, Eq)]
 pub struct Fx(I40F24);
 
+impl Default for Fx {
+    fn default() -> Fx {
+        Fx(I40F24::from_bits(0))
+    }
+}
+
 impl Debug for Fx {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         Debug::fmt(&self.0, f)
@@ -881,6 +887,18 @@ impl Fx {
     }
 }
 
+impl Fx {
+    #[inline]
+    pub fn frac_180_pi() -> Self {
+        fx(180) / Fx::pi()
+    }
+
+    #[inline]
+    pub fn frac_pi_180() -> Self {
+        Fx::pi() / fx(180)
+    }
+}
+
 impl Serialize for Fx {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         return serializer.serialize_f64(self.to_f64());
@@ -898,8 +916,28 @@ impl<'de> Deserialize<'de> for Fx {
                 return formatter.write_str("a int or a float");
             }
 
+            fn visit_f32<E: de::Error>(self, value: f32) -> Result<Self::Value, E> {
+                return Ok(value as f64);
+            }
+
             fn visit_f64<E: de::Error>(self, value: f64) -> Result<Self::Value, E> {
                 return Ok(value);
+            }
+
+            fn visit_i32<E: de::Error>(self, value: i32) -> Result<Self::Value, E> {
+                return Ok(value as f64);
+            }
+
+            fn visit_i64<E: de::Error>(self, value: i64) -> Result<Self::Value, E> {
+                return Ok(value as f64);
+            }
+
+            fn visit_u32<E: de::Error>(self, value: u32) -> Result<Self::Value, E> {
+                return Ok(value as f64);
+            }
+
+            fn visit_u64<E: de::Error>(self, value: u64) -> Result<Self::Value, E> {
+                return Ok(value as f64);
             }
         }
 
