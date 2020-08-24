@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use m::Fx;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum ResCoordinate {
