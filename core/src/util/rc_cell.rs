@@ -7,12 +7,47 @@ use std::mem;
 use std::ops::{CoerceUnsized, Deref, DerefMut, DispatchFromDyn};
 use std::ptr::{self, NonNull};
 
+//
+// RcCellBox
+//
+
 #[repr(C)]
 struct RcCellBox<T: ?Sized> {
     strong: Cell<usize>,
+    weak: Cell<usize>,
     borrow: Cell<isize>,
     value: T,
 }
+
+impl<T: ?Sized> RcCellBox<T> {
+    #[inline]
+    fn inc_strong(&self) -> usize {
+        self.strong.set(self.strong.get() + 1);
+        return self.strong.get();
+    }
+
+    #[inline]
+    fn dec_strong(&self) -> usize {
+        self.strong.set(self.strong.get() - 1);
+        return self.strong.get();
+    }
+
+    #[inline]
+    fn inc_weak(&self) -> usize {
+        self.weak.set(self.weak.get() + 1);
+        return self.weak.get();
+    }
+
+    #[inline]
+    fn dec_weak(&self) -> usize {
+        self.weak.set(self.weak.get() - 1);
+        return self.weak.get();
+    }
+}
+
+//
+// RcCell: reference count
+//
 
 pub struct RcCell<T: ?Sized> {
     ptr: NonNull<RcCellBox<T>>,
@@ -30,6 +65,7 @@ impl<T> RcCell<T> {
         return RcCell {
             ptr: Box::leak(Box::new(RcCellBox {
                 strong: Cell::new(1),
+                weak: Cell::new(1), // acquire "strong weak" pointer
                 borrow: Cell::new(0),
                 value,
             }))
@@ -42,7 +78,7 @@ impl<T> RcCell<T> {
 impl<T: ?Sized> Clone for RcCell<T> {
     #[inline]
     fn clone(&self) -> RcCell<T> {
-        self.inc_strong();
+        self.inner().inc_strong();
         return RcCell {
             ptr: self.ptr,
             phantom: PhantomData,
@@ -52,13 +88,11 @@ impl<T: ?Sized> Clone for RcCell<T> {
 
 impl<T: ?Sized> Drop for RcCell<T> {
     fn drop(&mut self) {
-        if self.dec_strong() == 0 {
-            unsafe {
-                ptr::drop_in_place(self.ptr.as_ptr());
-                alloc::dealloc(
-                    self.ptr.as_ptr() as *mut u8,
-                    Layout::for_value(self.ptr.as_ref()),
-                );
+        if self.inner().dec_strong() == 0 {
+            unsafe { ptr::drop_in_place(self.ptr.as_ptr()) };
+            if self.inner().dec_weak() == 0 {
+                let ptr = self.ptr.as_ptr() as *mut u8;
+                unsafe { alloc::dealloc(ptr, Layout::for_value(self.ptr.as_ref())) };
             }
         }
     }
@@ -66,44 +100,132 @@ impl<T: ?Sized> Drop for RcCell<T> {
 
 impl<T: ?Sized> RcCell<T> {
     #[inline]
-    fn box_ref(&self) -> &RcCellBox<T> {
+    pub fn strong_count(&self) -> usize {
+        return self.inner().strong.get();
+    }
+
+    #[inline]
+    pub fn weak_count(&self) -> usize {
+        return self.inner().weak.get() - 1;
+    }
+
+    #[inline]
+    pub fn downgrade(&self) -> WeakCell<T> {
+        self.inner().inc_weak();
+        debug_assert!(!is_dangling(self.ptr));
+        return WeakCell { ptr: self.ptr };
+    }
+
+    #[inline]
+    fn inner(&self) -> &RcCellBox<T> {
         return unsafe { &*self.ptr.as_ref() };
     }
+}
 
+//
+// WeakCell
+//
+
+pub struct WeakCell<T: ?Sized> {
+    ptr: NonNull<RcCellBox<T>>,
+}
+
+impl<T> !Sync for WeakCell<T> {}
+impl<T> !Send for WeakCell<T> {}
+
+impl<T: ?Sized + Unsize<U>, U: ?Sized> CoerceUnsized<WeakCell<U>> for WeakCell<T> {}
+impl<T: ?Sized + Unsize<U>, U: ?Sized> DispatchFromDyn<WeakCell<U>> for WeakCell<T> {}
+
+impl<T> WeakCell<T> {
+    pub fn new() -> WeakCell<T> {
+        return WeakCell {
+            ptr: NonNull::new(usize::MAX as *mut RcCellBox<T>).expect("MAX is not 0"),
+        };
+    }
+}
+
+impl<T: ?Sized> Clone for WeakCell<T> {
     #[inline]
-    fn get_strong(&self) -> usize {
-        return self.box_ref().strong.get();
+    fn clone(&self) -> WeakCell<T> {
+        if let Ok(inner) = self.inner() {
+            inner.inc_strong();
+        }
+        return WeakCell { ptr: self.ptr };
+    }
+}
+
+impl<T: ?Sized> Drop for WeakCell<T> {
+    fn drop(&mut self) {
+        if let Ok(inner) = self.inner() {
+            if inner.dec_weak() == 0 {
+                let ptr = self.ptr.as_ptr() as *mut u8;
+                unsafe { alloc::dealloc(ptr, Layout::for_value(self.ptr.as_ref())) };
+            }
+        }
+    }
+}
+
+impl<T: ?Sized> WeakCell<T> {
+    #[inline]
+    pub fn strong_count(&self) -> usize {
+        if let Ok(inner) = self.inner() {
+            return inner.strong.get();
+        }
+        return 0;
     }
 
     #[inline]
-    fn inc_strong(&self) -> usize {
-        let refer = self.box_ref();
-        refer.strong.set(refer.strong.get() + 1);
-        return refer.strong.get();
+    pub fn weak_count(&self) -> usize {
+        if let Ok(inner) = self.inner() {
+            if inner.strong.get() > 0 {
+                return inner.weak.get() - 1;
+            }
+        }
+        return 0;
     }
 
     #[inline]
-    fn dec_strong(&self) -> usize {
-        let refer = self.box_ref();
-        refer.strong.set(refer.strong.get() - 1);
-        return refer.strong.get();
+    pub fn upgrade(&self) -> Result<RcCell<T>, RcCellError> {
+        if self.inner()?.strong.get() > 0 {
+            self.inner()?.inc_strong();
+            return Ok(RcCell {
+                ptr: self.ptr,
+                phantom: PhantomData,
+            });
+        }
+        return Err(RcCellError::DanglingPtr);
     }
 
+    #[inline]
+    fn inner(&self) -> Result<&RcCellBox<T>, RcCellError> {
+        if !is_dangling(self.ptr) {
+            return Ok(unsafe { self.ptr.as_ref() });
+        } else {
+            return Err(RcCellError::DanglingPtr);
+        }
+    }
+}
+
+//
+// RcCell: borrow
+//
+
+impl<T: ?Sized> RcCell<T> {
     #[inline]
     fn get_borrow(&self) -> isize {
-        return self.box_ref().borrow.get();
+        return self.inner().borrow.get();
     }
 
     #[inline]
     fn set_borrow(&self, borrow: isize) {
-        self.box_ref().borrow.set(borrow);
+        self.inner().borrow.set(borrow);
     }
 
     #[inline]
     pub unsafe fn as_ptr_mut(this: &Self) -> *mut T {
         let ptr = this.ptr.as_ptr();
         let fake_ptr = ptr as *mut T;
-        let offset = data_offset(this.box_ref());
+        let offset = data_offset(this.inner());
         return set_data_ptr(fake_ptr, (ptr as *mut u8).offset(offset));
     }
 
@@ -140,11 +262,11 @@ impl<T: ?Sized> RcCell<T> {
         if borrow > 0 {
             self.set_borrow(borrow);
             return Ok(RcCellRef {
-                borrow: &self.box_ref().borrow,
+                borrow: &self.inner().borrow,
                 value: unsafe { RcCell::as_ref_mut(self) },
             });
         } else {
-            return Err(RcCellError { _private: () });
+            return Err(RcCellError::MutBorrowed);
         }
     }
 
@@ -187,11 +309,11 @@ impl<T: ?Sized> RcCell<T> {
         if self.get_borrow() == 0 {
             self.set_borrow(-1);
             return Ok(RcCellRefMut {
-                borrow: &self.box_ref().borrow,
+                borrow: &self.inner().borrow,
                 value: unsafe { RcCell::as_ref_mut(self) },
             });
         } else {
-            return Err(RcCellError { _private: () });
+            return Err(RcCellError::MutBorrowed);
         }
     }
 
@@ -201,8 +323,14 @@ impl<T: ?Sized> RcCell<T> {
     }
 }
 
-pub struct RcCellError {
-    _private: (),
+//
+// RcCellError
+//
+
+#[derive(Debug)]
+pub enum RcCellError {
+    DanglingPtr,
+    MutBorrowed,
 }
 
 impl Error for RcCellError {
@@ -211,17 +339,18 @@ impl Error for RcCellError {
     }
 }
 
-impl Debug for RcCellError {
+impl Display for RcCellError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("BorrowError").finish()
+        return match self {
+            RcCellError::DanglingPtr => Display::fmt("dangling pointer", f),
+            RcCellError::MutBorrowed => Display::fmt("already mutably borrowed", f),
+        };
     }
 }
 
-impl Display for RcCellError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt("already mutably borrowed", f)
-    }
-}
+//
+// utils
+//
 
 unsafe fn set_data_ptr<T: ?Sized, U>(mut ptr: *mut T, data: *mut U) -> *mut T {
     let pptr = (&mut ptr as *mut _) as *mut *mut u8;
@@ -233,6 +362,11 @@ unsafe fn data_offset<T: ?Sized>(ptr: *const T) -> isize {
     let align = mem::align_of_val(&*ptr);
     let layout = Layout::new::<RcCellBox<()>>();
     return (layout.size() + layout.padding_needed_for(align)) as isize;
+}
+
+fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {
+    let address = ptr.as_ptr() as *mut () as usize;
+    return address == usize::MAX;
 }
 
 #[cfg(test)]
@@ -250,6 +384,31 @@ mod tests {
         fn f(&self) -> i32 {
             10
         }
+    }
+
+    #[test]
+    fn test_rc_cell_refcount() {
+        let mut weak: WeakCell<S> = WeakCell::<S>::new();
+        assert_eq!(weak.strong_count(), 0);
+        assert_eq!(weak.weak_count(), 0);
+
+        {
+            let rc1: RcCell<S> = RcCell::<S>::new(S {});
+            assert_eq!(rc1.strong_count(), 1);
+            assert_eq!(rc1.weak_count(), 0);
+
+            weak = rc1.downgrade();
+            assert_eq!(weak.strong_count(), 1);
+            assert_eq!(weak.weak_count(), 1);
+
+            let rc2: RcCell<S> = weak.upgrade().unwrap();
+            assert_eq!(rc2.strong_count(), 2);
+            assert_eq!(rc2.weak_count(), 1);
+        }
+
+        assert_eq!(weak.strong_count(), 0);
+        assert_eq!(weak.weak_count(), 0);
+        assert!(weak.upgrade().is_err());
     }
 
     #[test]
