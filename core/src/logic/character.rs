@@ -6,7 +6,6 @@ use crate::logic::base::CollideContext;
 use crate::logic::{
     CmdJumpCharacter, CmdMoveCharacter, CmdNewCharacter, NewContext, StateContext, UpdateContext,
 };
-use crate::resource::ResCharacter;
 use crate::state::{StateDataX, StateLifecycle};
 use crate::util::RcCell;
 use failure::Error;
