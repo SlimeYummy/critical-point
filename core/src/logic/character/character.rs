@@ -1,11 +1,9 @@
 use super::base::{CollisionHandle, INVAILD_COLLISION_HANDLE};
 use super::{LogicObj, LogicObjX, LogicStage};
-use crate as core;
 use crate::id::{ObjID, CLASS_CHARACTER};
-use crate::logic::base::CollideContext;
-use crate::logic::{
-    CmdJumpCharacter, CmdMoveCharacter, CmdNewCharacter, NewContext, StateContext, UpdateContext,
-};
+use crate::logic::base::{NewContext, StateContext, UpdateContext, CollideContext};
+use crate::logic::command::{CmdJumpCharacter, CmdMoveCharacter, CmdNewCharacter};
+use crate::resource::ResCharacter;
 use crate::state::{StateDataX, StateLifecycle};
 use crate::util::RcCell;
 use failure::Error;
@@ -15,17 +13,36 @@ use ncollide3d::pipeline::CollisionGroups;
 use ncollide3d::query::{Proximity, Ray};
 use ncollide3d::shape::{Capsule, ShapeHandle};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use super::buff::{LogicBuff, LogicBuffSet};
+use super::properties::LogicProperties;
 
+#[derive(Debug, Default)]
 struct Parameter {
     direction: Vector2<Fx>,
     is_moving: bool,
     speed: Fx,
 }
 
+#[derive(Debug, Default)]
 struct Variable {
     isometry: Isometry3<Fx>,
     on_ground: u32,
     gravity_speed: Fx,
+
+    max_health: i32,
+    health: i32,
+    max_energy: i32,
+    energy: i32,
+    max_posture: i32,
+    posture: i32,
+    move_speed: Fx,
+    physical_attack: i32,
+    physical_defense: i32,
+    elemental_attack: i32,
+    elemental_defense: i32,
+    arcane_attack: i32,
+    arcane_defense: i32,
 }
 
 #[derive(LogicObjX)]
@@ -33,6 +50,12 @@ struct Variable {
 pub struct LogicCharacter {
     obj_id: ObjID,
     lifecycle: StateLifecycle,
+    properties: LogicProperties,
+    kinematics: LogicKinematics,
+    chara_shape: LogicCharaShape,
+    buff_set: LogicBuffSet<i32>,
+
+
     coll_handle: CollisionHandle,
     // c: ResCharacter,
     p: Parameter,
@@ -62,6 +85,7 @@ impl LogicCharacter {
                 ),
                 on_ground: 0,
                 gravity_speed: fx(0),
+                ..Variable::default()
             },
         });
         let (coll_handle, _) = ctx.new_collision(
@@ -75,6 +99,18 @@ impl LogicCharacter {
         return chara;
     }
 
+    pub fn resource(&self) -> Arc<ResCharacter> {
+
+    }
+
+    pub fn parameter(&self) -> &Parameter {
+        return &self.p;
+    }
+
+    pub fn variable(&mut self) -> &mut Variable {
+        return &mut self.v;
+    }
+
     pub(crate) fn mov(&mut self, cmd: &CmdMoveCharacter) {
         self.p.direction = cmd.direction;
         self.p.is_moving = cmd.is_moving;
@@ -83,6 +119,10 @@ impl LogicCharacter {
     pub(crate) fn jump(&mut self, _cmd: &CmdJumpCharacter) {
         self.v.on_ground = 0;
         self.v.gravity_speed += fx(8);
+    }
+
+    pub fn isometry(&self) -> Isometry3<Fx> {
+        return self.v.isometry;
     }
 }
 
@@ -164,3 +204,13 @@ impl Default for StateCharacter {
         };
     }
 }
+
+
+
+
+
+
+
+
+
+
