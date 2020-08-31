@@ -1,5 +1,6 @@
 use crate::id::{ObjID, ObjIDGener};
 use crate::logic::base::CollideContext;
+use crate::logic::skill::LogicSkill;
 use crate::logic::*;
 use crate::state::StatePool;
 use crate::util::{make_err, RcCell};
@@ -17,6 +18,7 @@ pub struct LogicEngine {
     stage: Option<RcCell<LogicStage>>,
     main_character: Option<RcCell<LogicCharacter>>,
     characters: HashMap<ObjID, RcCell<LogicCharacter>>,
+    skills: HashMap<ObjID, RcCell<LogicSkill>>,
     world: CollisionWorld<Fx, RcCell<dyn LogicObj>>,
 }
 
@@ -31,7 +33,8 @@ impl LogicEngine {
             id_gener: ObjIDGener::new(),
             stage: None,
             main_character: None,
-            characters: HashMap::new(),
+            characters: HashMap::with_capacity(64),
+            skills: HashMap::with_capacity(1024),
             world: CollisionWorld::new(fx(0.02)),
         };
     }
