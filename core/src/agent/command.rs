@@ -32,3 +32,12 @@ pub struct CmdMoveCharacter {
 pub struct CmdJumpCharacter {
     pub obj_id: ObjID,
 }
+
+#[derive(Clone, Debug)]
+pub struct CmdNewSkill {
+    pub obj_id: ObjID,
+    pub skill_id: String,
+    pub position: Option<Point3<Fx>>,
+    pub source_id: Option<ObjID>,
+    pub target_id: Option<ObjID>,
+}
