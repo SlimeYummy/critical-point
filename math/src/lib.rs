@@ -9,10 +9,14 @@ extern crate rand;
 extern crate serde;
 extern crate simba;
 
+mod algorithm;
 mod cast;
-pub mod fx;
+mod fx;
+mod near;
 mod vector;
 
+pub use algorithm::*;
 pub use cast::*;
 pub use fx::*;
+pub use near::*;
 pub use vector::*;

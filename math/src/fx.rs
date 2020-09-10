@@ -1,6 +1,6 @@
 use approx::{AbsDiffEq, RelativeEq, UlpsEq};
 use fixed::traits::ToFixed;
-use fixed::types::I40F24;
+use fixed::types::I32F32;
 use num_traits::{Bounded, FromPrimitive, Num, One, Signed, Zero};
 use rand::distributions::{Distribution, OpenClosed01, Standard};
 use rand::Rng;
@@ -17,15 +17,15 @@ use std::ops::{
 
 #[inline(always)]
 pub fn fx<N: ToFixed>(num: N) -> Fx {
-    return Fx(I40F24::from_num(num));
+    return Fx(I32F32::from_num(num));
 }
 
 #[derive(Clone, Copy, Eq)]
-pub struct Fx(I40F24);
+pub struct Fx(I32F32);
 
 impl Default for Fx {
     fn default() -> Fx {
-        Fx(I40F24::from_bits(0))
+        Fx(I32F32::from_bits(0))
     }
 }
 
@@ -65,7 +65,7 @@ impl Distribution<Fx> for Standard {
     #[inline]
     fn sample<'a, G: Rng + ?Sized>(&self, rng: &mut G) -> Fx {
         let bits = rng.gen();
-        Fx(I40F24::from_bits(bits))
+        Fx(I32F32::from_bits(bits))
     }
 }
 
@@ -73,7 +73,7 @@ impl Distribution<Fx> for OpenClosed01 {
     #[inline]
     fn sample<'a, G: Rng + ?Sized>(&self, rng: &mut G) -> Fx {
         let val: f64 = rng.gen();
-        Fx(I40F24::from_num(val))
+        Fx(I32F32::from_num(val))
     }
 }
 
@@ -209,7 +209,7 @@ impl SubAssign for Fx {
 impl Zero for Fx {
     #[inline(always)]
     fn zero() -> Self {
-        Self(I40F24::from_num(0))
+        Self(I32F32::from_num(0))
     }
 
     #[inline(always)]
@@ -221,7 +221,7 @@ impl Zero for Fx {
 impl One for Fx {
     #[inline(always)]
     fn one() -> Self {
-        Self(I40F24::from_num(1))
+        Self(I32F32::from_num(1))
     }
 }
 
@@ -237,7 +237,7 @@ impl Field for Fx {}
 impl SubsetOf<Fx> for f64 {
     #[inline]
     fn to_superset(&self) -> Fx {
-        Fx(I40F24::from_num(*self))
+        Fx(I32F32::from_num(*self))
     }
 
     #[inline]
@@ -281,7 +281,7 @@ impl SubsetOf<Fx> for Fx {
 impl AbsDiffEq for Fx {
     type Epsilon = Self;
     fn default_epsilon() -> Self::Epsilon {
-        Self(I40F24::from_bits(0b01))
+        Self(I32F32::from_bits(0x16))
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
@@ -353,12 +353,12 @@ impl UlpsEq for Fx {
 impl Bounded for Fx {
     #[inline]
     fn min_value() -> Self {
-        Self(I40F24::MIN)
+        Self(I32F32::MIN)
     }
 
     #[inline]
     fn max_value() -> Self {
-        Self(I40F24::MAX)
+        Self(I32F32::MAX)
     }
 }
 
@@ -733,7 +733,7 @@ impl RealField for Fx {
     /// Archimedes' constant.
     #[inline]
     fn pi() -> Self {
-        Self(I40F24::PI)
+        Self(I32F32::PI)
     }
 
     /// 2.0 * pi.
@@ -745,79 +745,79 @@ impl RealField for Fx {
     /// pi / 2.0.
     #[inline]
     fn frac_pi_2() -> Self {
-        Self(I40F24::FRAC_PI_2)
+        Self(I32F32::FRAC_PI_2)
     }
 
     /// pi / 3.0.
     #[inline]
     fn frac_pi_3() -> Self {
-        Self(I40F24::FRAC_PI_3)
+        Self(I32F32::FRAC_PI_3)
     }
 
     /// pi / 4.0.
     #[inline]
     fn frac_pi_4() -> Self {
-        Self(I40F24::FRAC_PI_4)
+        Self(I32F32::FRAC_PI_4)
     }
 
     /// pi / 6.0.
     #[inline]
     fn frac_pi_6() -> Self {
-        Self(I40F24::FRAC_PI_6)
+        Self(I32F32::FRAC_PI_6)
     }
 
     /// pi / 8.0.
     #[inline]
     fn frac_pi_8() -> Self {
-        Self(I40F24::FRAC_PI_8)
+        Self(I32F32::FRAC_PI_8)
     }
 
     /// 1.0 / pi.
     #[inline]
     fn frac_1_pi() -> Self {
-        Self(I40F24::FRAC_1_PI)
+        Self(I32F32::FRAC_1_PI)
     }
 
     /// 2.0 / pi.
     #[inline]
     fn frac_2_pi() -> Self {
-        Self(I40F24::FRAC_2_PI)
+        Self(I32F32::FRAC_2_PI)
     }
 
     /// 2.0 / sqrt(pi).
     #[inline]
     fn frac_2_sqrt_pi() -> Self {
-        Self(I40F24::FRAC_2_SQRT_PI)
+        Self(I32F32::FRAC_2_SQRT_PI)
     }
 
     /// Euler's number.
     #[inline]
     fn e() -> Self {
-        Self(I40F24::E)
+        Self(I32F32::E)
     }
 
     /// log2(e).
     #[inline]
     fn log2_e() -> Self {
-        Self(I40F24::LOG2_E)
+        Self(I32F32::LOG2_E)
     }
 
     /// log10(e).
     #[inline]
     fn log10_e() -> Self {
-        Self(I40F24::LOG10_E)
+        Self(I32F32::LOG10_E)
     }
 
     /// ln(2.0).
     #[inline]
     fn ln_2() -> Self {
-        Self(I40F24::LN_2)
+        Self(I32F32::LN_2)
     }
 
     /// ln(10.0).
     #[inline]
     fn ln_10() -> Self {
-        Self(I40F24::LN_10)
+        Self(I32F32::LN_10)
     }
 }
 
