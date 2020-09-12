@@ -1,8 +1,7 @@
-use crate::logic::LogicObj;
 use crate::util::RcCell;
-use m::Fx;
-use ncollide3d::pipeline::{self, CollisionGroups, CollisionObjectSlabHandle};
-use super::engine::PhysicTeam;
+use m::{fx, Fx};
+use ncollide3d::pipeline::{self, CollisionGroups, CollisionObjectSlabHandle, GeometricQueryType};
+use std::f64::consts::PI;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -26,11 +25,21 @@ impl PhysicTeam {
     fn to_excepted_groups(&self) -> [usize; 3] {
         let mut member_groups = [0usize; 3];
         let mut index = 0usize;
-        for iter in PhysicTeam::Team1..=PhysicTeam::Team4 {
-            if iter != team {
-                member_groups[index] = to_member(iter);
-                index += 1;
-            }
+        if *self != PhysicTeam::Team1 {
+            member_groups[index] = GROUPS_TEAM1;
+            index += 1;
+        }
+        if *self != PhysicTeam::Team2 {
+            member_groups[index] = GROUPS_TEAM2;
+            index += 1;
+        }
+        if *self != PhysicTeam::Team3 {
+            member_groups[index] = GROUPS_TEAM3;
+            index += 1;
+        }
+        if *self != PhysicTeam::Team4 {
+            member_groups[index] = GROUPS_TEAM3;
+            index += 1;
         }
         return member_groups;
     }
@@ -42,10 +51,10 @@ pub enum PhysicClass {
     NormalBounding,
     GiantBounding,
     GiantVolume,
-    Target{team: PhysicTeam},
-    Damage{team: PhysicTeam, stage: bool},
-    Health{team: PhysicTeam, stage: bool},
-    Defense{team: PhysicTeam},
+    Target { team: PhysicTeam },
+    Damage { team: PhysicTeam, stage: bool },
+    Health { team: PhysicTeam, stage: bool },
+    Defense { team: PhysicTeam },
     EnvDamage,
     EnvHealth,
 }
@@ -66,16 +75,31 @@ const GROUPS_HEALTH: usize = 28;
 const GROUPS_DEFENSE: usize = 29;
 
 impl PhysicClass {
+    pub fn to_geometric_query_type(&self) -> GeometricQueryType<Fx> {
+        return match self {
+            PhysicClass::Stage => GeometricQueryType::Contacts(fx(0), fx(PI / 36.0)),
+            PhysicClass::NormalBounding => GeometricQueryType::Contacts(fx(0.1), fx(PI / 36.0)),
+            PhysicClass::GiantBounding => GeometricQueryType::Contacts(fx(0.1), fx(PI / 36.0)),
+            PhysicClass::GiantVolume => GeometricQueryType::Contacts(fx(0.1), fx(PI / 36.0)),
+            PhysicClass::Target { team: _ } => GeometricQueryType::Proximity(fx(0.1)),
+            PhysicClass::Damage { team: _, stage: _ } => GeometricQueryType::Proximity(fx(0.15)),
+            PhysicClass::Health { team: _, stage: _ } => GeometricQueryType::Proximity(fx(0.15)),
+            PhysicClass::Defense { team: _ } => GeometricQueryType::Proximity(fx(0.15)),
+            PhysicClass::EnvDamage => GeometricQueryType::Proximity(fx(0.15)),
+            PhysicClass::EnvHealth => GeometricQueryType::Proximity(fx(0.15)),
+        };
+    }
+
     pub fn to_collision_groups(&self) -> CollisionGroups {
         return match self {
             PhysicClass::Stage => Self::groups_stage(),
             PhysicClass::NormalBounding => Self::groups_normal_bounding(),
             PhysicClass::GiantBounding => Self::groups_giant_bounding(),
             PhysicClass::GiantVolume => Self::groups_giant_volume(),
-            PhysicClass::Target{team} => Self::groups_target(team),
-            PhysicClass::Damage{team, stage} => Self::groups_damage(team, *stage),
-            PhysicClass::Health {team, stage} => Self::groups_health(team, *stage),
-            PhysicClass::Defense {team} => Self::groups_defense(team),
+            PhysicClass::Target { team } => Self::groups_target(team),
+            PhysicClass::Damage { team, stage } => Self::groups_damage(team, *stage),
+            PhysicClass::Health { team, stage } => Self::groups_health(team, *stage),
+            PhysicClass::Defense { team } => Self::groups_defense(team),
             PhysicClass::EnvDamage => Self::groups_env_damage(),
             PhysicClass::EnvHealth => Self::groups_env_health(),
         };
@@ -84,7 +108,12 @@ impl PhysicClass {
     fn groups_stage() -> CollisionGroups {
         let mut groups = CollisionGroups::new();
         groups.set_membership(&[GROUPS_STAGE, GROUPS_TEAM0]);
-        groups.set_whitelist(&[GROUPS_BOUNDING, GROUPS_DAMAGE, GROUPS_HEALTH]);
+        groups.set_whitelist(&[
+            GROUPS_NORMAL_BOUNDING,
+            GROUPS_GIANT_BOUNDING,
+            GROUPS_DAMAGE,
+            GROUPS_HEALTH,
+        ]);
         return groups;
     }
 
