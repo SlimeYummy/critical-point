@@ -7,8 +7,10 @@ edition = "2018"
 [dependencies]
 approx = "0.3"
 cordic = "0.1"
+derivative = "2"
 fixed = { version = "1", features = [ "serde" ] }
 nalgebra = "0.21"
+ncollide3d = { version = "0.23", features = [ "improved_fixed_point_support" ] }
 num-traits = { version = "0.2.11", features = ["libm"] }
 rand = "0.7"
 serde = "1"
