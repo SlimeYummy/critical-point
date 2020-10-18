@@ -1,6 +1,6 @@
 use approx::AbsDiffEq;
 use na::RealField;
-use num_traits::{Zero, One};
+use num_traits::{One, Zero};
 
 pub fn approx_eq<T: AbsDiffEq>(a: &T, b: &T) -> bool {
     return a.abs_diff_eq(b, T::default_epsilon());

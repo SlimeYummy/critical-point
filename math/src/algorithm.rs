@@ -1,4 +1,4 @@
-use super::{fx, v3_to_p3, Fx, approx_zero, approx_lt};
+use super::{approx_lt, approx_zero, fx, v3_to_p3, Fx};
 use na::{self, Point3, RealField, Unit, Vector2, Vector3};
 use num_traits::Zero;
 
@@ -45,8 +45,8 @@ pub fn cone_from_unit_vec(
     if approx_zero(&n) {
         return None;
     }
-    let t = (n[0] * nv1[0] + n[1] * nv1[1] + n[2] * nv1[2]) /
-        (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+    let t =
+        (n[0] * nv1[0] + n[1] * nv1[1] + n[2] * nv1[2]) / (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
     let center = Vector3::new(n[0] * t, n[1] * t, n[2] * t);
     return Some(DirectionCone {
         center: v3_to_p3(center),
