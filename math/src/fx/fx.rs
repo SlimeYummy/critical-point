@@ -21,7 +21,7 @@ pub fn fx<N: ToFixed>(num: N) -> Fx {
 }
 
 #[derive(Clone, Copy, Eq)]
-pub struct Fx(I32F32);
+pub struct Fx(pub(crate) I32F32);
 
 impl Default for Fx {
     fn default() -> Fx {
