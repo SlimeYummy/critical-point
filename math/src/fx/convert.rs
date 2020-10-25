@@ -2,6 +2,17 @@ use super::fx::Fx;
 use fixed::types::I32F32;
 use std::mem;
 
+#[inline(always)]
+pub const fn ff(n: f64) -> Fx {
+    return fx_f64(n);
+}
+
+#[inline(always)]
+pub const fn fi(n: i64) -> Fx {
+    return fx_i64(n);
+}
+
+#[inline(always)]
 pub const fn fx_isize(n: isize) -> Fx {
     if n > i32::MAX as isize {
         return Fx(I32F32::MAX);
@@ -12,6 +23,7 @@ pub const fn fx_isize(n: isize) -> Fx {
     }
 }
 
+#[inline(always)]
 pub const fn fx_usize(n: usize) -> Fx {
     if n > i32::MAX as usize {
         return Fx(I32F32::MAX);
@@ -20,6 +32,7 @@ pub const fn fx_usize(n: usize) -> Fx {
     }
 }
 
+#[inline(always)]
 pub const fn fx_i64(n: i64) -> Fx {
     if n > i32::MAX as i64 {
         return Fx(I32F32::MAX);
@@ -30,6 +43,7 @@ pub const fn fx_i64(n: i64) -> Fx {
     }
 }
 
+#[inline(always)]
 pub const fn fx_u64(n: u64) -> Fx {
     if n > i32::MAX as u64 {
         return Fx(I32F32::MAX);
@@ -38,30 +52,37 @@ pub const fn fx_u64(n: u64) -> Fx {
     }
 }
 
+#[inline(always)]
 pub const fn fx_i32(n: i32) -> Fx {
     return Fx(I32F32::from_bits((n as i64) << 32));
 }
 
+#[inline(always)]
 pub const fn fx_u32(n: u32) -> Fx {
     return Fx(I32F32::from_bits((n as i64) << 32));
 }
 
+#[inline(always)]
 pub const fn fx_i16(n: i16) -> Fx {
     return Fx(I32F32::from_bits((n as i64) << 32));
 }
 
+#[inline(always)]
 pub const fn fx_u16(n: u16) -> Fx {
     return Fx(I32F32::from_bits((n as i64) << 32));
 }
 
+#[inline(always)]
 pub const fn fx_i8(n: i8) -> Fx {
     return Fx(I32F32::from_bits((n as i64) << 32));
 }
 
+#[inline(always)]
 pub const fn fx_u8(n: u8) -> Fx {
     return Fx(I32F32::from_bits((n as i64) << 32));
 }
 
+#[inline]
 pub const fn fx_f64(n: f64) -> Fx {
     let bits: u64 = unsafe { mem::transmute(n) };
     let sign = (bits & 0x8000_0000_0000_0000) as i64;
@@ -83,6 +104,7 @@ pub const fn fx_f64(n: f64) -> Fx {
     }
 }
 
+#[inline]
 pub const fn fx_f32(n: f32) -> Fx {
     let bits: u32 = unsafe { mem::transmute(n) };
     let sign = ((bits & 0x8000_0000) as i64) << 32;
@@ -114,17 +136,17 @@ mod tests {
         assert_eq!(fx_isize(-2147483648), Fx(I32F32::from_num(-2147483648)));
         assert_eq!(fx_isize(isize::MAX), Fx(I32F32::MAX));
         assert_eq!(fx_isize(isize::MIN), Fx(I32F32::MIN));
-        
+
         assert_eq!(fx_usize(0), Fx(I32F32::from_num(0)));
         assert_eq!(fx_usize(2147483647), Fx(I32F32::from_num(2147483647)));
         assert_eq!(fx_usize(usize::MAX), Fx(I32F32::MAX));
-        
+
         assert_eq!(fx_i64(0), Fx(I32F32::from_num(0)));
         assert_eq!(fx_i64(2147483647), Fx(I32F32::from_num(2147483647)));
         assert_eq!(fx_i64(-2147483648), Fx(I32F32::from_num(-2147483648)));
         assert_eq!(fx_i64(i64::MAX), Fx(I32F32::MAX));
         assert_eq!(fx_i64(i64::MIN), Fx(I32F32::MIN));
-        
+
         assert_eq!(fx_u64(0), Fx(I32F32::from_num(0)));
         assert_eq!(fx_u64(2147483647), Fx(I32F32::from_num(2147483647)));
         assert_eq!(fx_u64(u64::MAX), Fx(I32F32::MAX));
