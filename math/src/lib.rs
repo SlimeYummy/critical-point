@@ -13,17 +13,15 @@ extern crate serde;
 extern crate simba;
 
 mod algorithm;
-mod cast;
+mod auto_gen;
 mod fx;
 mod near;
-mod real;
 mod shape;
 mod vector;
 
 pub use algorithm::*;
-pub use cast::*;
+pub use auto_gen::*;
 pub use fx::*;
 pub use near::*;
-pub use real::*;
 pub use shape::*;
 pub use vector::*;

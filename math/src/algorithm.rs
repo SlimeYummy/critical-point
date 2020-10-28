@@ -1,6 +1,5 @@
-use super::{approx_lt, approx_zero, fx, v3_to_p3, Fx};
+use super::{approx_lt, approx_zero, fi, v3_to_p3, Fx};
 use na::{self, Point3, RealField, Unit, Vector2, Vector3};
-use num_traits::Zero;
 
 // normal => (a, b, c)
 // plane => ax + by + cz = 0
@@ -9,12 +8,12 @@ pub fn direction_on_plane(normal: &Vector3<Fx>, direction: &Vector2<Fx>) -> Vect
     let a: Fx = normal.x;
     let b: Fx = normal.y;
     let c: Fx = normal.z;
-    if b == Fx::zero() {
-        return Vector3::new(Fx::zero(), fx(-1), Fx::zero());
+    if b == fi(0) {
+        return Vector3::new(fi(0), fi(-1), fi(0));
     }
     let x = direction.x;
     let z = direction.y;
-    let y = fx(-1) * (a * x + c * z) / b;
+    let y = fi(-1) * (a * x + c * z) / b;
     return Vector3::new(x, y, z).normalize();
 }
 
