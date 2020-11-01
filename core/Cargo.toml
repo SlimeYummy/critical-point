@@ -17,7 +17,6 @@ libc = "0.2"
 math = { path = "../math" }
 nalgebra = { version = "0.21", features = [ "serde-serialize" ] }
 ncollide3d = { version = "0.23", features = [ "improved_fixed_point_support" ] }
-nphysics3d = { version = "0.16", features = [ "improved_fixed_point_support" ] }
 serde = { version = "1" , features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.8"
