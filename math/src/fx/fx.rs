@@ -54,6 +54,13 @@ impl PartialOrd for Fx {
     }
 }
 
+impl Ord for Fx {
+    #[inline(always)]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
 impl Distribution<Fx> for Standard {
     #[inline]
     fn sample<'a, G: Rng + ?Sized>(&self, rng: &mut G) -> Fx {
@@ -124,6 +131,14 @@ impl Mul for Fx {
     }
 }
 
+impl Mul<i64> for Fx {
+    type Output = Self;
+    #[inline(always)]
+    fn mul(self, rhs: i64) -> Self {
+        Self(self.0 * rhs)
+    }
+}
+
 impl Div for Fx {
     type Output = Self;
     #[inline(always)]
@@ -132,11 +147,27 @@ impl Div for Fx {
     }
 }
 
+impl Div<i64> for Fx {
+    type Output = Self;
+    #[inline(always)]
+    fn div(self, rhs: i64) -> Self {
+        Self(self.0 / rhs)
+    }
+}
+
 impl Rem for Fx {
     type Output = Self;
     #[inline(always)]
     fn rem(self, rhs: Self) -> Self {
         Self(self.0 % rhs.0)
+    }
+}
+
+impl Rem<i64> for Fx {
+    type Output = Self;
+    #[inline(always)]
+    fn rem(self, rhs: i64) -> Self {
+        Self(self.0 % rhs)
     }
 }
 
@@ -171,6 +202,13 @@ impl MulAssign for Fx {
     }
 }
 
+impl MulAssign<i64> for Fx {
+    #[inline(always)]
+    fn mul_assign(&mut self, rhs: i64) {
+        self.0 *= rhs
+    }
+}
+
 impl DivAssign for Fx {
     #[inline(always)]
     fn div_assign(&mut self, rhs: Self) {
@@ -178,10 +216,24 @@ impl DivAssign for Fx {
     }
 }
 
+impl DivAssign<i64> for Fx {
+    #[inline(always)]
+    fn div_assign(&mut self, rhs: i64) {
+        self.0 /= rhs
+    }
+}
+
 impl RemAssign for Fx {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: Self) {
         self.0 %= rhs.0
+    }
+}
+
+impl RemAssign<i64> for Fx {
+    #[inline(always)]
+    fn rem_assign(&mut self, rhs: i64) {
+        self.0 %= rhs
     }
 }
 
@@ -687,6 +739,15 @@ impl RealField for Fx {
     #[inline]
     fn is_sign_negative(self) -> bool {
         self.0.is_negative()
+    }
+
+    #[inline]
+    fn copysign(self, sign: Self) -> Self {
+        if sign >= Self::zero() {
+            self.abs()
+        } else {
+            -self.abs()
+        }
     }
 
     #[inline]

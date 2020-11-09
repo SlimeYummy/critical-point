@@ -23,6 +23,8 @@ pub trait RealExt {
     fn sqrt3() -> Self;
     fn sqrt5() -> Self;
     fn sqrt10() -> Self;
+    fn frac_180_pi() -> Self;
+    fn frac_pi_180() -> Self;
     fn sin0() -> Self;
     fn sin15() -> Self;
     fn sin30() -> Self;
@@ -63,6 +65,8 @@ impl RealExt for Fx {
     #[inline(always)] fn sqrt3() -> Self { ff(1.7320508075688772) }
     #[inline(always)] fn sqrt5() -> Self { ff(2.2360679774997898) }
     #[inline(always)] fn sqrt10() -> Self { ff(3.1622776601683795) }
+    #[inline(always)] fn frac_180_pi() -> Self { ff(0.0174532925199433) }
+    #[inline(always)] fn frac_pi_180() -> Self { ff(57.2957795130823229) }
     #[inline(always)] fn sin0() -> Self { ff(0.0000000000000000) }
     #[inline(always)] fn sin15() -> Self { ff(0.2588190451025207) }
     #[inline(always)] fn sin30() -> Self { ff(0.4999999999999999) }
@@ -103,6 +107,8 @@ impl RealExt for f64 {
     #[inline(always)] fn sqrt3() -> Self { 1.7320508075688772 }
     #[inline(always)] fn sqrt5() -> Self { 2.2360679774997898 }
     #[inline(always)] fn sqrt10() -> Self { 3.1622776601683795 }
+    #[inline(always)] fn frac_180_pi() -> Self { 0.0174532925199433 }
+    #[inline(always)] fn frac_pi_180() -> Self { 57.2957795130823229 }
     #[inline(always)] fn sin0() -> Self { 0.0000000000000000 }
     #[inline(always)] fn sin15() -> Self { 0.2588190451025207 }
     #[inline(always)] fn sin30() -> Self { 0.4999999999999999 }
@@ -143,6 +149,8 @@ impl RealExt for f32 {
     #[inline(always)] fn sqrt3() -> Self { 1.7320508075688772 }
     #[inline(always)] fn sqrt5() -> Self { 2.2360679774997898 }
     #[inline(always)] fn sqrt10() -> Self { 3.1622776601683795 }
+    #[inline(always)] fn frac_180_pi() -> Self { 0.0174532925199433 }
+    #[inline(always)] fn frac_pi_180() -> Self { 57.2957795130823229 }
     #[inline(always)] fn sin0() -> Self { 0.0000000000000000 }
     #[inline(always)] fn sin15() -> Self { 0.2588190451025207 }
     #[inline(always)] fn sin30() -> Self { 0.4999999999999999 }

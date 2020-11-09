@@ -17,6 +17,8 @@ table = [
     ("sqrt3", math.sqrt(3.0)),
     ("sqrt5", math.sqrt(5.0)),
     ("sqrt10", math.sqrt(10.0)),
+    ("frac_180_pi", math.pi / 180.0),
+    ("frac_pi_180", 180.0 / math.pi),
     ("sin0", 0.0),
     ("sin15", math.sin(math.pi / 12.0)),
     ("sin30", math.sin(math.pi / 6.0)),
