@@ -17,22 +17,18 @@ impl<N: RealField> ConeExt<N> {
 
     #[inline]
     pub fn half_height(&self) -> N {
-        return self.cone.half_height();
+        return self.cone.half_height;
     }
 
     #[inline]
     pub fn radius(&self) -> N {
-        return self.cone.radius();
+        return self.cone.radius;
     }
 }
 
 impl<N: RealField> SupportMap<N> for ConeExt<N> {
-    fn support_point(&self, transform: &Isometry3<N>, dir: &Vector3<N>) -> Point3<N> {
-        return self.cone.support_point(transform, dir);
-    }
-
-    fn support_point_toward(&self, transform: &Isometry3<N>, dir: &Unit<Vector3<N>>) -> Point3<N> {
-        return self.cone.support_point_toward(transform, dir);
+    fn local_support_point(&self, dir: &Vector3<N>) -> Point3<N> {
+        return self.cone.local_support_point(dir);
     }
 }
 

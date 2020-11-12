@@ -57,29 +57,23 @@ impl<N: RealField + RealExt> HumanBounding<N> {
 }
 
 impl<N: RealField + RealExt> SupportMap<N> for HumanBounding<N> {
-    fn support_point(&self, transform: &Isometry3<N>, dir: &Vector3<N>) -> Point3<N> {
-        return self.support_point_toward(transform, &Unit::new_normalize(*dir));
-    }
-
-    fn support_point_toward(&self, transform: &Isometry3<N>, dir: &Unit<Vector3<N>>) -> Point3<N> {
-        let dir_local = transform.inverse_transform_vector(dir);
-
-        if dir_local[1].is_positive() {
+    fn local_support_point(&self, dir: &Vector3<N>) -> Point3<N> {
+        if dir[1].is_positive() {
             // half capsule
-            let mut pt_local = dir_local * self.capsule_radius();
+            let mut pt_local = dir * self.capsule_radius();
             pt_local[1] += self.capsule_height();
-            return transform * Point3::from(pt_local);
+            return Point3::from(pt_local);
         } else {
-            if dir_local[1] > -N::frac2() {
+            if dir[1] > -N::frac2() {
                 // cone
-                let dir_radius = Vector3::new(dir_local[0], N::c0(), dir_local[2]);
+                let dir_radius = Vector3::new(dir[0], N::c0(), dir[2]);
                 let pt_local = v3_to_p3(dir_radius.normalize() * self.capsule_radius());
-                return transform * Point3::from(pt_local);
+                return Point3::from(pt_local);
             } else {
                 // bottom sphere
-                let mut pt_local = dir_local * self.bottom_radius();
+                let mut pt_local = dir * self.bottom_radius();
                 pt_local[1] -= self.bottom_center();
-                return transform * Point3::from(pt_local);
+                return Point3::from(pt_local);
             }
         }
     }

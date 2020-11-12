@@ -17,22 +17,18 @@ impl<N: RealField> CylinderExt<N> {
 
     #[inline]
     pub fn half_height(&self) -> N {
-        return self.cylinder.half_height();
+        return self.cylinder.half_height;
     }
 
     #[inline]
     pub fn radius(&self) -> N {
-        return self.cylinder.radius();
+        return self.cylinder.radius;
     }
 }
 
 impl<N: RealField> SupportMap<N> for CylinderExt<N> {
-    fn support_point(&self, transform: &Isometry3<N>, dir: &Vector3<N>) -> Point3<N> {
-        return self.cylinder.support_point(transform, dir);
-    }
-
-    fn support_point_toward(&self, transform: &Isometry3<N>, dir: &Unit<Vector3<N>>) -> Point3<N> {
-        return self.cylinder.support_point_toward(transform, dir);
+    fn local_support_point(&self, dir: &Vector3<N>) -> Point3<N> {
+        return self.cylinder.local_support_point(dir);
     }
 }
 
