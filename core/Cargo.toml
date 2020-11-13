@@ -5,19 +5,20 @@ authors = ["FenQiDian <email@fenqi.moe>"]
 edition = "2018"
 
 [dependencies]
-alga = "0.9"
-approx = "0.3"
-derivative = "2"
+alga = "0.9.3"
+anyhow = "1.0.34"
+approx = "0.4.0"
+derivative = "2.1.1"
 derive = { path = "../derive" }
-euclid = "0.20"
-failure = "0.1"
-fixed = "1"
-lazy_static = "1"
-libc = "0.2"
+euclid = "0.22.1"
+fixed = "1.5.0"
+lazy_static = "1.4.0"
+libc = "0.2.80"
 math = { path = "../math" }
-nalgebra = { version = "0.21", features = [ "serde-serialize" ] }
-ncollide3d = { version = "0.23", features = [ "improved_fixed_point_support" ] }
-serde = { version = "1" , features = ["derive"] }
-serde_json = "1"
-serde_yaml = "0.8"
-simba = { version = "0.1", features = [ "partial_fixed_point_support" ] }
+nalgebra = { version = "0.23.0", features = [ "serde-serialize" ] }
+ncollide3d = { version = "0.26.1", features = [ "improved_fixed_point_support" ] }
+serde = { version = "1.0.117", features = ["derive"] }
+serde_json = "1.0.59"
+serde_yaml = "0.8.14"
+simba = { version = "0.3.1", features = [ "partial_fixed_point_support" ] }
+thiserror = "1.0.22"
