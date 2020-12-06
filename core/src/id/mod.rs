@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 
-mod class;
-mod id;
+mod class_id;
+mod obj_id;
+mod res_id;
 
-pub use class::*;
-pub use id::{ClassID, ObjID, ObjIDGener, ResID};
+pub use class_id::ClassID;
+pub use obj_id::{ObjID, ObjIDGener};
+pub use res_id::{FastResID, FastResIDGener, ResID};
