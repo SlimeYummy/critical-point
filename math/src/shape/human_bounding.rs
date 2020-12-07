@@ -405,8 +405,8 @@ mod tests {
             Point3::new(ff(0.4), hb.capsule_height() + hb.capsule_radius(), ff(0.4)),
         )
         .transform_by(&transform);
-        assert_relative_eq!(aabb.mins(), excepted.mins());
-        assert_relative_eq!(aabb.maxs(), excepted.maxs());
+        assert_relative_eq!(aabb.mins, excepted.mins);
+        assert_relative_eq!(aabb.maxs, excepted.maxs);
     }
 
     #[test]
