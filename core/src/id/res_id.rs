@@ -53,7 +53,7 @@ impl ResID {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash, Serialize, Deserialize)]
 pub struct FastResID(u64);
 
 impl From<u64> for FastResID {
@@ -88,20 +88,24 @@ impl FastResID {
     }
 }
 
+#[derive(Debug)]
 pub struct FastResIDGener {
     counter: u64,
 }
 
+impl !Sync for FastResIDGener {}
+impl !Send for FastResIDGener {}
+
 impl FastResIDGener {
-    pub fn new() -> FastResIDGener {
-        return FastResIDGener { counter: 1 };
+    pub fn new(start: u64) -> FastResIDGener {
+        return FastResIDGener { counter: start };
     }
 
     pub fn gen(&mut self) -> FastResID {
-        let obj_id = FastResID(self.counter);
-        if obj_id.is_valid() {
+        let fobj_id = FastResID(self.counter);
+        if fobj_id.is_valid() {
             self.counter += 1;
-            return obj_id;
+            return fobj_id;
         } else {
             panic!("FastResID exhausted!");
         }
@@ -113,7 +117,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_res_id_normal() {
+    fn test_res_id() {
         assert_eq!(ResID::from("abcd"), ResID("abcd".to_string()));
         assert_eq!(ResID::from(""), ResID::invalid());
 
@@ -125,8 +129,8 @@ mod tests {
     }
 
     #[test]
-    fn test_fast_res_id_normal() {
-        let mut gener = FastResIDGener::new();
+    fn test_fast_res_id() {
+        let mut gener = FastResIDGener::new(1);
 
         assert_eq!(gener.gen(), FastResID(1));
         assert_eq!(gener.gen(), FastResID(2));
