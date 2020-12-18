@@ -60,7 +60,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_class_id_normal() {
+    fn test_class_id() {
         assert_eq!(ClassID::default(), ClassID::invalid());
         assert_eq!(ClassID::invalid().is_invalid(), true);
         assert_eq!(ClassID::invalid().is_valid(), false);
