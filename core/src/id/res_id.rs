@@ -97,11 +97,11 @@ impl !Sync for FastResIDGener {}
 impl !Send for FastResIDGener {}
 
 impl FastResIDGener {
-    pub fn new(start: u64) -> FastResIDGener {
+    pub(crate) fn new(start: u64) -> FastResIDGener {
         return FastResIDGener { counter: start };
     }
 
-    pub fn gen(&mut self) -> FastResID {
+    pub(crate) fn gen(&mut self) -> FastResID {
         let fobj_id = FastResID(self.counter);
         if fobj_id.is_valid() {
             self.counter += 1;

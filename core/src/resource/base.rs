@@ -1,8 +1,7 @@
-use super::cache::RestoreContext;
-pub use crate::derive::ResObjX;
+use super::cache::{CompileContext, RestoreContext};
 use crate::id::{ClassID, FastResID, ResID};
-use anyhow::anyhow;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+pub(crate) use derive::ResObjX;
 use m::Fx;
 use serde::{Deserialize, Serialize};
 use std::mem;
@@ -60,6 +59,7 @@ pub trait ResObj
 where
     Self: ResObjSuper,
 {
+    fn compile(&mut self, ctx: &mut CompileContext) -> Result<()>;
     fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()>;
 }
 

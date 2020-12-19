@@ -11,7 +11,7 @@ pub struct ResAction {
 }
 
 impl ResAction {
-    pub(super) fn restore(&mut self, frac_1_fps: Fx) {
+    pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
         for transform in &mut self.world_transforms {
             transform.restore(frac_1_fps);
         }
@@ -26,7 +26,7 @@ pub enum ResWorldTransform {
 }
 
 impl ResWorldTransform {
-    pub(super) fn restore(&mut self, frac_1_fps: Fx) {
+    pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
         match self {
             ResWorldTransform::Velocity(velocity) => velocity.restore(frac_1_fps),
             ResWorldTransform::Towards(towards) => towards.restore(frac_1_fps),
@@ -48,7 +48,7 @@ pub struct ResWorldVelocity {
 }
 
 impl ResWorldVelocity {
-    pub(super) fn restore(&mut self, frac_1_fps: Fx) {
+    pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
         self.start_velocity_frame = self.start_velocity * frac_1_fps;
         self.finish_velocity_frame = self.finish_velocity * frac_1_fps;
     }
@@ -67,7 +67,7 @@ pub struct ResWorldTowards {
 }
 
 impl ResWorldTowards {
-    pub(super) fn restore(&mut self, _frac_1_fps: Fx) {
+    pub(crate) fn restore(&mut self, _frac_1_fps: Fx) {
         self.start_towards_frame = self.start_towards;
         self.finish_towards_frame = self.finish_towards;
     }
@@ -81,7 +81,7 @@ pub struct ResWorldSwitches {
 }
 
 impl ResWorldSwitches {
-    pub(super) fn restore(&mut self, _frac_1_fps: Fx) {}
+    pub(crate) fn restore(&mut self, _frac_1_fps: Fx) {}
 }
 
 // #[derive(Debug, Deserialize, Serialize)]

@@ -85,11 +85,11 @@ impl !Sync for FastObjIDGener {}
 impl !Send for FastObjIDGener {}
 
 impl FastObjIDGener {
-    pub fn new(start: u64) -> FastObjIDGener {
+    pub(crate) fn new(start: u64) -> FastObjIDGener {
         return FastObjIDGener { counter: start };
     }
 
-    pub fn gen(&mut self) -> FastObjID {
+    pub(crate) fn gen(&mut self) -> FastObjID {
         let fobj_id = FastObjID(self.counter);
         if fobj_id.is_valid() {
             self.counter += 1;
