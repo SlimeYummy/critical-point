@@ -1,8 +1,8 @@
 // use super::action::ResAction;
 use super::base::{ResObj, ResObjX};
-use super::cache::RestoreContext;
+use super::cache::{CompileContext, RestoreContext};
 use super::serde_helper;
-use super::shape::ResShapeEx;
+use super::shape::ResShape;
 use crate::id::{FastResID, ResID};
 use anyhow::Result;
 use m::Fx;
@@ -15,7 +15,7 @@ pub struct ResCharaGeneral {
     pub res_id: ResID,
     #[serde(skip)]
     pub fres_id: FastResID,
-    pub collision: ResShapeEx,
+    pub collision: ResShape,
     #[serde(with = "serde_helper::isometry")]
     pub origin: Isometry3<Fx>,
     pub max_health: i32,
@@ -32,8 +32,13 @@ pub struct ResCharaGeneral {
 
 #[typetag::serde(name = "CharaGeneral")]
 impl ResObj for ResCharaGeneral {
+    fn compile(&mut self, ctx: &mut CompileContext) -> Result<()> {
+        ctx.insert_res_id(&self.res_id)?;
+        return Ok(());
+    }
+
     fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()> {
-        self.fres_id = ctx.gene_fast_res_id();
+        self.fres_id = ctx.find_fres_id(&self.res_id)?;
         self.collision.restore(ctx)?;
         return Ok(());
     }
@@ -50,7 +55,7 @@ mod tests {
     // fn test_res_character() {
     //     let c1 = ResCharaGeneral {
     //         id: String::from("Character"),
-    //         collision: ResShapeEx::Ball(ResBall { radius: fi(1) }),
+    //         collision: ResShape::Ball(ResBall { radius: fi(1) }),
     //         h_bounding: ResShapeCache::default_handle(),
     //         origin: Isometry3::new(na::zero(), na::zero()),
     //         max_health: 10000,

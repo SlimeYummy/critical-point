@@ -11,7 +11,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufReader;
 
-pub(crate) type ShapeCacheKey = ResShape;
+pub(crate) type ShapeCacheKey = ResShapeAny;
 pub(crate) type ShapeCacheValue = ShapeHandle<Fx>;
 
 lazy_static! {
@@ -24,28 +24,28 @@ pub fn default_shape_handle() -> ShapeHandle<Fx> {
 
 #[derive(Derivative, Clone, Serialize, Deserialize)]
 #[derivative(Debug)]
-pub struct ResShapeEx {
+pub struct ResShape {
     #[derivative(Debug = "ignore")]
     #[serde(skip)]
     #[serde(default = "default_shape_handle")]
     pub handle: ShapeHandle<Fx>,
     #[serde(flatten)]
-    pub shape: ResShape,
+    pub shape: ResShapeAny,
 }
 
-impl ResShapeEx {
+impl ResShape {
     pub(crate) fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()> {
         if let Some(handle) = ctx.find_shape(&self.shape) {
             self.handle = handle;
         } else {
             self.handle = match &mut self.shape {
-                ResShape::Ball(ball) => ball.load(),
-                ResShape::Cuboid(cuboid) => cuboid.load(),
-                ResShape::Capsule(capsule) => capsule.load(),
-                ResShape::Cone(cone) => cone.load(),
-                ResShape::Cylinder(cylinder) => cylinder.load(),
-                ResShape::Human(human) => human.load(),
-                ResShape::TriMesh(mesh) => mesh.load()?,
+                ResShapeAny::Ball(ball) => ball.load(),
+                ResShapeAny::Cuboid(cuboid) => cuboid.load(),
+                ResShapeAny::Capsule(capsule) => capsule.load(),
+                ResShapeAny::Cone(cone) => cone.load(),
+                ResShapeAny::Cylinder(cylinder) => cylinder.load(),
+                ResShapeAny::Human(human) => human.load(),
+                ResShapeAny::TriMesh(mesh) => mesh.load()?,
             };
             ctx.insert_shape(self.shape.clone(), self.handle.clone());
         }
@@ -55,7 +55,7 @@ impl ResShapeEx {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum ResShape {
+pub enum ResShapeAny {
     Ball(ResShapeBall),
     Cuboid(ResShapeCuboid),
     Capsule(ResShapeCapsule),
@@ -71,7 +71,7 @@ pub struct ResShapeBall {
 }
 
 impl ResShapeBall {
-    pub(super) fn load(&mut self) -> ShapeHandle<Fx> {
+    pub(crate) fn load(&mut self) -> ShapeHandle<Fx> {
         return ShapeHandle::new(Ball::new(self.radius));
     }
 }
@@ -84,7 +84,7 @@ pub struct ResShapeCuboid {
 }
 
 impl ResShapeCuboid {
-    pub(super) fn load(&mut self) -> ShapeHandle<Fx> {
+    pub(crate) fn load(&mut self) -> ShapeHandle<Fx> {
         return ShapeHandle::new(Cuboid::new(Vector3::new(self.x, self.y, self.z)));
     }
 }
@@ -96,7 +96,7 @@ pub struct ResShapeCapsule {
 }
 
 impl ResShapeCapsule {
-    pub(super) fn load(&mut self) -> ShapeHandle<Fx> {
+    pub(crate) fn load(&mut self) -> ShapeHandle<Fx> {
         return ShapeHandle::new(Capsule::new(self.half_height, self.radius));
     }
 }
@@ -108,7 +108,7 @@ pub struct ResShapeCone {
 }
 
 impl ResShapeCone {
-    pub(super) fn load(&mut self) -> ShapeHandle<Fx> {
+    pub(crate) fn load(&mut self) -> ShapeHandle<Fx> {
         return ShapeHandle::new(ConeExt::new(self.half_height, self.radius));
     }
 }
@@ -120,7 +120,7 @@ pub struct ResShapeCylinder {
 }
 
 impl ResShapeCylinder {
-    pub(super) fn load(&mut self) -> ShapeHandle<Fx> {
+    pub(crate) fn load(&mut self) -> ShapeHandle<Fx> {
         return ShapeHandle::new(CylinderExt::new(self.half_height, self.radius));
     }
 }
@@ -133,7 +133,7 @@ pub struct ResShapeHuman {
 }
 
 impl ResShapeHuman {
-    pub(super) fn load(&mut self) -> ShapeHandle<Fx> {
+    pub(crate) fn load(&mut self) -> ShapeHandle<Fx> {
         return ShapeHandle::new(HumanBounding::new(
             self.capsule_radius,
             self.capsule_height,
@@ -148,7 +148,7 @@ pub struct ResShapeTriMesh {
 }
 
 impl ResShapeTriMesh {
-    pub(super) fn load(&mut self) -> Result<ShapeHandle<Fx>> {
+    pub(crate) fn load(&mut self) -> Result<ShapeHandle<Fx>> {
         if self.filename.ends_with(".obj") {
             return Self::load_obj(&self.filename);
         } else if self.filename.ends_with(".glb") {
@@ -196,41 +196,41 @@ mod tests {
 
     #[test]
     fn test_res_shape_ball() {
-        let s1 = ResShapeEx {
+        let s1 = ResShape {
             handle: default_shape_handle(),
-            shape: ResShape::Ball(ResShapeBall { radius: fi(1) }),
+            shape: ResShapeAny::Ball(ResShapeBall { radius: fi(1) }),
         };
         let json = serde_json::to_string(&s1).unwrap();
-        let s2 = serde_json::from_str::<ResShapeEx>(&json).unwrap();
+        let s2 = serde_json::from_str::<ResShape>(&json).unwrap();
         assert_eq!(s1.shape, s2.shape);
     }
 
     #[test]
     fn test_res_shape_cuboid() {
-        let s1 = ResShapeEx {
+        let s1 = ResShape {
             handle: default_shape_handle(),
-            shape: ResShape::Cuboid(ResShapeCuboid {
+            shape: ResShapeAny::Cuboid(ResShapeCuboid {
                 x: fi(1),
                 y: fi(2),
                 z: fi(3),
             }),
         };
         let json = serde_json::to_string(&s1).unwrap();
-        let s2 = serde_json::from_str::<ResShapeEx>(&json).unwrap();
+        let s2 = serde_json::from_str::<ResShape>(&json).unwrap();
         assert_eq!(s1.shape, s2.shape);
     }
 
     #[test]
     fn test_res_shape_capsule() {
-        let s1 = ResShapeEx {
+        let s1 = ResShape {
             handle: default_shape_handle(),
-            shape: ResShape::Capsule(ResShapeCapsule {
+            shape: ResShapeAny::Capsule(ResShapeCapsule {
                 half_height: fi(1),
                 radius: ff(0.5),
             }),
         };
         let json = serde_json::to_string(&s1).unwrap();
-        let s2 = serde_json::from_str::<ResShapeEx>(&json).unwrap();
+        let s2 = serde_json::from_str::<ResShape>(&json).unwrap();
         assert_eq!(s1.shape, s2.shape);
     }
 }

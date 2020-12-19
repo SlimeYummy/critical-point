@@ -1,6 +1,6 @@
 use super::base::{ResObj, ResObjX};
-use super::cache::RestoreContext;
-use super::shape::ResShapeEx;
+use super::cache::{CompileContext, RestoreContext};
+use super::shape::ResShape;
 use crate::id::{FastResID, ResID};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -11,13 +11,18 @@ pub struct ResStageGeneral {
     pub res_id: ResID,
     #[serde(skip)]
     pub fres_id: FastResID,
-    pub world: ResShapeEx,
+    pub world: ResShape,
 }
 
 #[typetag::serde(name = "StageGeneral")]
 impl ResObj for ResStageGeneral {
+    fn compile(&mut self, ctx: &mut CompileContext) -> Result<()> {
+        ctx.insert_res_id(&self.res_id)?;
+        return Ok(());
+    }
+
     fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()> {
-        self.fres_id = ctx.gene_fast_res_id();
+        self.fres_id = ctx.find_fres_id(&self.res_id)?;
         self.world.restore(ctx)?;
         return Ok(());
     }
@@ -25,7 +30,7 @@ impl ResObj for ResStageGeneral {
 
 #[cfg(test)]
 mod tests {
-    use super::super::shape::{ResShape, ResShapeCuboid};
+    use super::super::shape::{ResShapeAny, ResShapeCuboid};
     use super::*;
     use crate::id::ClassID;
     use crate::m::fi;
@@ -43,7 +48,7 @@ mod tests {
                 y: 1
                 z: 100
         "#;
-        
+
         let stage: Arc<dyn ResObj> = serde_yaml::from_str(YAML).unwrap();
         assert_eq!(stage.class_id(), ClassID::StageGeneral);
         assert_eq!(stage.res_id(), &ResID::from("Stage.Test"));
@@ -52,7 +57,7 @@ mod tests {
         let general: Arc<ResStageGeneral> = stage.cast_as().unwrap();
         assert_eq!(
             general.world.shape,
-            ResShape::Cuboid(ResShapeCuboid {
+            ResShapeAny::Cuboid(ResShapeCuboid {
                 x: fi(100),
                 y: fi(1),
                 z: fi(100)
