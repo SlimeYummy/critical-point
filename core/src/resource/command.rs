@@ -3,11 +3,8 @@ use super::cache::{CompileContext, RestoreContext};
 use crate::engine::Command;
 use crate::id::{FastResID, ResID};
 use crate::stage::CmdNewStageGeneral;
-use crate::{
-    engine,
-    id::{FastObjID, ObjID},
-};
-use anyhow::{anyhow, Result};
+use crate::id::{FastObjID, ObjID};
+use anyhow::Result;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -54,7 +51,7 @@ impl ResObj for ResCommand {
     }
 
     fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()> {
-        self.fres_id = ctx.find_fres_id(&self.res_id)?;
+        self.fres_id = ctx.get_fres_id(&self.res_id)?;
         for cmd in &mut self.commands {
             match cmd {
                 ResCommandAny::NewStageGeneral(cmd) => cmd.restore(ctx),
@@ -85,7 +82,7 @@ impl ResCmdNewStageGeneral {
     }
 
     fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()> {
-        self.fobj_id = ctx.find_fobj_id(&self.obj_id)?;
+        self.fobj_id = ctx.get_fobj_id(&self.obj_id)?;
         return Ok(());
     }
 
