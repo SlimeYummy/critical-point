@@ -153,13 +153,14 @@ impl<N: RealField + RealExt> PointQuery<N> for HumanBounding<N> {
     ) -> PointProjection<N> {
         let pt_local = transform.inverse_transform_point(pt);
 
-        if pt_local[1] <= N::c0() ||
-            is_point_under_cone(N::tan15() * self.capsule_radius(), N::tan15(), pt_local)
+        if pt_local[1] <= N::c0()
+            || is_point_under_cone(N::tan15() * self.capsule_radius(), N::tan15(), pt_local)
         {
             // cone
             if is_point_under_cone(-self.bottom_center(), N::tan30(), pt_local) {
                 // bottom sphere
-                let vec_pc = Vector3::new(pt_local[0], pt_local[1] + self.bottom_center(), pt_local[2]);
+                let vec_pc =
+                    Vector3::new(pt_local[0], pt_local[1] + self.bottom_center(), pt_local[2]);
                 let dist_squared = vec_pc.norm_squared();
                 let inside = dist_squared < self.bottom_radius() * self.bottom_radius();
                 if solid && inside {
@@ -167,7 +168,11 @@ impl<N: RealField + RealExt> PointQuery<N> for HumanBounding<N> {
                 } else {
                     let vec_radius = vec_pc * (self.bottom_radius() / dist_squared.sqrt());
                     let pt_proj = transform
-                        * Point3::new(vec_radius[0], vec_radius[1] - self.bottom_center(), vec_radius[2]);
+                        * Point3::new(
+                            vec_radius[0],
+                            vec_radius[1] - self.bottom_center(),
+                            vec_radius[2],
+                        );
                     return PointProjection::new(inside, pt_proj);
                 }
             } else {
@@ -181,12 +186,13 @@ impl<N: RealField + RealExt> PointQuery<N> for HumanBounding<N> {
                         vec_xz[2] * self.bottom_radius(),
                     );
                     let (pt_local_proj, proj_type) = segment_project_point(pt_a, pt_b, pt_local);
-    
+
                     if proj_type == SegmentProjectType::A {
                         return PointProjection::new(false, transform * pt_a);
                     } else {
                         let pt_proj = transform * pt_local_proj;
-                        let inside = p3_to_v3(pt_proj).norm_squared() > (pt - pt_proj).norm_squared();
+                        let inside =
+                            p3_to_v3(pt_proj).norm_squared() > (pt - pt_proj).norm_squared();
                         if solid && inside {
                             return PointProjection::new(true, *pt);
                         } else {
@@ -515,7 +521,7 @@ mod tests {
             proj.point,
             transform * Point3::new(Fx::sqrt2() * Fx::frac2(), fi(0), Fx::sqrt2() * Fx::frac2()),
         );
-        
+
         // xz plane
         let pt_in = Point3::new(Fx::frac2(), fi(0), Fx::frac2());
         let proj = hb.project_point(&transform, &(transform * pt_in), true);
@@ -524,7 +530,7 @@ mod tests {
             proj.point,
             transform * Point3::new(Fx::frac2(), fi(0), Fx::frac2()),
         );
-        
+
         let pt_in = Point3::new(ff(2.0), fi(0), ff(2.0));
         let proj = hb.project_point(&transform, &(transform * pt_in), false);
         assert_eq!(proj.is_inside, false);
@@ -532,7 +538,7 @@ mod tests {
             proj.point,
             transform * Point3::new(Fx::sqrt2() * Fx::frac2(), fi(0), Fx::sqrt2() * Fx::frac2()),
         );
-        
+
         // cone in capsule
         let pt_in = Point3::new(ff(0.1), ff(0.1), ff(0.1));
         let proj = hb.project_point(&transform, &(transform * pt_in), false);
@@ -543,23 +549,37 @@ mod tests {
         let pt_in = Point3::new(ff(0.5), ff(0.3), ff(0.5));
         let proj = hb.project_point(&transform, &(transform * pt_in), true);
         assert_eq!(proj.is_inside, true);
-        assert_relative_eq!(proj.point, transform * Point3::new(ff(0.5), ff(0.3), ff(0.5)));
-        
+        assert_relative_eq!(
+            proj.point,
+            transform * Point3::new(ff(0.5), ff(0.3), ff(0.5))
+        );
+
         let proj = hb.project_point(&transform, &(transform * pt_in), false);
         assert_eq!(proj.is_inside, true);
         assert_relative_eq!(
             proj.point,
-            transform * Point3::new(Fx::sqrt2() * Fx::frac2(), ff(0.3), Fx::sqrt2() * Fx::frac2()),
+            transform
+                * Point3::new(
+                    Fx::sqrt2() * Fx::frac2(),
+                    ff(0.3),
+                    Fx::sqrt2() * Fx::frac2()
+                ),
         );
 
         // capsule top
         let pt_in = Point3::new(ff(0.0), ff(1.2), ff(0.0));
         let proj = hb.project_point(&transform, &(transform * pt_in), true);
         assert_eq!(proj.is_inside, true);
-        assert_relative_eq!(proj.point, transform * Point3::new(ff(0.0), ff(1.2), ff(0.0)));
-        
+        assert_relative_eq!(
+            proj.point,
+            transform * Point3::new(ff(0.0), ff(1.2), ff(0.0))
+        );
+
         let proj = hb.project_point(&transform, &(transform * pt_in), false);
         assert_eq!(proj.is_inside, true);
-        assert_relative_eq!(proj.point, transform * Point3::new(ff(0.0), ff(1.5), ff(0.0)));
+        assert_relative_eq!(
+            proj.point,
+            transform * Point3::new(ff(0.0), ff(1.5), ff(0.0))
+        );
     }
 }
