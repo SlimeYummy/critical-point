@@ -5,6 +5,39 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
 use syn::*;
 
+#[proc_macro_derive(ResObjX, attributes(class_id))]
+pub fn res_obj(input: TokenStream) -> TokenStream {
+    let class = parse_macro_input!(input as ItemStruct);
+    let res = &class.ident;
+    let class_id = extract_class_id(&class.attrs, "ResObjX");
+
+    return TokenStream::from(quote! {
+        impl crate::resource::ResObjStatic for #res {
+            #[inline]
+            fn id() -> crate::id::ClassID {
+                return crate::id::ClassID::#class_id;
+            }
+        }
+
+        impl crate::resource::ResObjSuper for #res {
+            #[inline]
+            fn class_id(&self) -> crate::id::ClassID {
+                return crate::id::ClassID::#class_id;
+            }
+
+            #[inline]
+            fn res_id(&self) -> &crate::id::ResID {
+                return &self.res_id;
+            }
+
+            #[inline]
+            fn fres_id(&self) -> FastResID {
+                return self.fres_id;
+            }
+        }
+    });
+}
+
 #[proc_macro_derive(StateDataX, attributes(class_id))]
 pub fn state_data(input: TokenStream) -> TokenStream {
     let class = parse_macro_input!(input as ItemStruct);
@@ -12,58 +45,37 @@ pub fn state_data(input: TokenStream) -> TokenStream {
     let class_id = extract_class_id(&class.attrs, "StateDataX");
 
     return TokenStream::from(quote! {
-        impl core::state::StateDataStatic for #data {
-            fn id() -> core::id::ClassID {
-                return #class_id;
+        impl crate::state::StateDataStatic for #data {
+            #[inline]
+            fn id() -> crate::id::ClassID {
+                return crate::id::ClassID::#class_id;
             }
 
             fn init(
-                obj_id: core::id::ObjID,
-                lifecycle: core::state::StateLifecycle,
+                fobj_id: crate::id::FastObjID,
+                lifecycle: crate::state::StateLifecycle,
             ) -> Self {
                 let mut this = Self::default();
-                this.obj_id = obj_id;
+                this.fobj_id = fobj_id;
                 this.lifecycle = lifecycle;
                 return this;
             }
         }
 
-        impl core::state::StateData for #data {
-            fn class_id(&self) -> core::id::ClassID {
-                return #class_id;
+        impl crate::state::StateData for #data {
+            #[inline]
+            fn class_id(&self) -> crate::id::ClassID {
+                return crate::id::ClassID::#class_id;
             }
 
-            fn obj_id(&self) -> core::id::ObjID {
-                return self.obj_id;
+            #[inline]
+            fn fobj_id(&self) -> crate::id::FastObjID {
+                return self.fobj_id;
             }
 
-            fn lifecycle(&self) -> core::state::StateLifecycle {
+            #[inline]
+            fn lifecycle(&self) -> crate::state::StateLifecycle {
                 return self.lifecycle;
-            }
-        }
-    });
-}
-
-#[proc_macro_derive(StateOwnerX, attributes(class_id))]
-pub fn state_owner(input: TokenStream) -> TokenStream {
-    let class = parse_macro_input!(input as ItemStruct);
-    let owner = &class.ident;
-    let class_id = extract_class_id(&class.attrs, "StateOwnerX");
-
-    return TokenStream::from(quote! {
-        impl core::state::StateOwnerStatic for #owner {
-            fn id() -> core::id::ClassID {
-                return #class_id;
-            }
-        }
-
-        impl core::state::StateOwner for #owner {
-            fn class_id(&self) -> core::id::ClassID {
-                return #class_id;
-            }
-
-            fn obj_id(&self) -> core::id::ObjID {
-                return self.obj_id;
             }
         }
     });
@@ -76,19 +88,22 @@ pub fn logic_obj(input: TokenStream) -> TokenStream {
     let class_id = extract_class_id(&class.attrs, "LogicObjX");
 
     return TokenStream::from(quote! {
-        impl core::logic::LogicObjStatic for #logic {
-            fn id() -> core::id::ClassID {
-                return #class_id;
+        impl crate::engine::LogicObjStatic for #logic {
+            #[inline]
+            fn id() -> crate::id::ClassID {
+                return crate::id::ClassID::#class_id;
             }
         }
 
-        impl core::logic::LogicObjSuper for #logic {
-            fn class_id(&self) -> core::id::ClassID {
-                return #class_id;
+        impl crate::engine::LogicObj for #logic {
+            #[inline]
+            fn class_id(&self) -> crate::id::ClassID {
+                return crate::id::ClassID::#class_id;
             }
 
-            fn obj_id(&self) -> core::id::ObjID {
-                return self.obj_id;
+            #[inline]
+            fn fobj_id(&self) -> crate::id::FastObjID {
+                return self.fobj_id;
             }
         }
     });

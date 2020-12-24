@@ -38,7 +38,7 @@ impl ResObj for ResCharaGeneral {
     }
 
     fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()> {
-        self.fres_id = ctx.find_fres_id(&self.res_id)?;
+        self.fres_id = ctx.get_fres_id(&self.res_id)?;
         self.collision.restore(ctx)?;
         return Ok(());
     }

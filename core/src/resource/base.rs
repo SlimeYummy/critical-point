@@ -57,7 +57,7 @@ pub trait ResObjSuper {
 #[typetag::serde(tag = "type")] // TODO: ResObjX
 pub trait ResObj
 where
-    Self: ResObjSuper,
+    Self: ResObjSuper + Send + Sync,
 {
     fn compile(&mut self, ctx: &mut CompileContext) -> Result<()>;
     fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()>;

@@ -1,4 +1,5 @@
 #![feature(const_fn)]
+#![feature(const_fn_union)]
 #![allow(dead_code)]
 
 extern crate approx;

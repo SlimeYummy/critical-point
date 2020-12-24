@@ -3,5 +3,6 @@ members = [
     "derive",
     "math",
     "core",
+    "compiler",
     "plugin_gd",
 ]

@@ -2,7 +2,7 @@
 use super::base::ResObj;
 use super::id_table::IDTable;
 use super::shape::{ShapeCacheKey, ShapeCacheValue};
-use crate::id::{FastObjID, FastResID, ObjID, ResID};
+use crate::id::{FastObjID, FastResID, ObjID, ResID, FastResIDGener, FastObjIDGener};
 use anyhow::{anyhow, Context, Result};
 use derivative::Derivative;
 use serde::de::DeserializeOwned;
@@ -42,15 +42,15 @@ pub struct ResCache {
 }
 
 impl ResCache {
-    pub fn compile(res_file: &str) -> Result<Box<ResCache>> {
-        let mut cache = Box::new(ResCache {
+    pub fn compile(res_file: &str) -> Result<Arc<ResCache>> {
+        let mut cache = ResCache {
             status: CacheStatus::Compiling,
             file_pathes: HashSet::new(),
-            id_table: IDTable::new(1, 1),
+            id_table: IDTable::new(),
             res_cache: HashMap::new(),
             fres_cache: HashMap::new(),
             shape_cache: HashMap::new(),
-        });
+        };
 
         let res_path = PathBuf::from(res_file).canonicalize()?;
         cache.load_res_objs(res_path)?;
@@ -58,18 +58,18 @@ impl ResCache {
         cache.compile_res_objs()?;
         cache.status = CacheStatus::Compiled;
 
-        return Ok(cache);
+        return Ok(Arc::new(cache));
     }
 
-    pub fn restore(res_file: &str, id_file: &str) -> Result<Box<ResCache>> {
-        let mut cache = Box::new(ResCache {
+    pub fn restore(res_file: &str, id_file: &str) -> Result<Arc<ResCache>> {
+        let mut cache = ResCache {
             status: CacheStatus::Restoring,
             file_pathes: HashSet::new(),
             id_table: Self::load_file(&PathBuf::from(id_file))?,
             res_cache: HashMap::new(),
             fres_cache: HashMap::new(),
             shape_cache: HashMap::new(),
-        });
+        };
 
         let res_path = PathBuf::from(res_file).canonicalize()?;
         cache.load_res_objs(res_path)?;
@@ -77,7 +77,7 @@ impl ResCache {
         cache.restore_res_objs()?;
         cache.status = CacheStatus::Restored;
 
-        return Ok(cache);
+        return Ok(Arc::new(cache));
     }
 
     fn load_res_objs(&mut self, res_path: PathBuf) -> Result<()> {
@@ -105,7 +105,11 @@ impl ResCache {
 
     fn compile_res_objs(&mut self) -> Result<()> {
         let mut res_cache = self.res_cache.clone();
-        let mut ctx = CompileContext { cache: self };
+        let mut ctx = CompileContext {
+            cache: self,
+            res_gener: FastResIDGener::new(1),
+            obj_gener: FastObjIDGener::new(1),
+        };
         for (_, res) in &mut res_cache {
             unsafe { Arc::get_mut_unchecked(res).compile(&mut ctx) }?;
         }
@@ -150,26 +154,31 @@ impl ResCache {
 }
 
 impl ResCache {
+    #[inline]
     pub fn id_table(&self) -> &IDTable {
         return &self.id_table;
     }
 
-    pub fn find_fres_id(&self, res_id: &ResID) -> Result<FastResID> {
-        return self.id_table.find_fres_id(res_id);
+    #[inline]
+    pub fn get_fres_id(&self, res_id: &ResID) -> Result<FastResID> {
+        return self.id_table.get_fres_id(res_id);
     }
 
-    pub fn find_fobj_id(&self, obj_id: &ObjID) -> Result<FastObjID> {
-        return self.id_table.find_fobj_id(obj_id);
+    #[inline]
+    pub fn get_fobj_id(&self, obj_id: &ObjID) -> Result<FastObjID> {
+        return self.id_table.get_fobj_id(obj_id);
     }
 
-    pub fn find_by_id(&self, res_id: &ResID) -> Result<Arc<dyn ResObj>> {
+    #[inline]
+    pub fn find_res_by_id(&self, res_id: &ResID) -> Result<Arc<dyn ResObj>> {
         return match self.res_cache.get(res_id) {
             Some(res) => Ok(res.clone()),
             None => Err(anyhow!("ResObj not found {:?}", res_id)),
         };
     }
 
-    pub fn find_by_fid(&self, fres_id: FastResID) -> Result<Arc<dyn ResObj>> {
+    #[inline]
+    pub fn find_res_by_fid(&self, fres_id: FastResID) -> Result<Arc<dyn ResObj>> {
         return match self.fres_cache.get(&fres_id) {
             Some(res) => Ok(res.clone()),
             None => Err(anyhow!("ResObj not found {:?}", fres_id)),
@@ -179,6 +188,8 @@ impl ResCache {
 
 pub struct CompileContext<'t> {
     cache: &'t mut ResCache,
+    res_gener: FastResIDGener,
+    obj_gener: FastObjIDGener,
 }
 
 impl<'t> CompileContext<'t> {
@@ -186,14 +197,14 @@ impl<'t> CompileContext<'t> {
         if self.cache.status != CacheStatus::Compiling {
             return Err(anyhow!("Not in compiling status"));
         }
-        return self.cache.id_table.insert_res_id(res_id);
+        return self.cache.id_table.insert_res_id(res_id, self.res_gener.gen());
     }
 
     pub(crate) fn insert_obj_id(&mut self, obj_id: &ObjID) -> Result<()> {
         if self.cache.status != CacheStatus::Compiling {
             return Err(anyhow!("Not in compiling status"));
         }
-        return self.cache.id_table.insert_obj_id(obj_id);
+        return self.cache.id_table.insert_obj_id(obj_id, self.obj_gener.gen());
     }
 }
 
@@ -202,18 +213,18 @@ pub struct RestoreContext<'t> {
 }
 
 impl<'t> RestoreContext<'t> {
-    pub(crate) fn find_fres_id(&self, res_id: &ResID) -> Result<FastResID> {
+    pub(crate) fn get_fres_id(&self, res_id: &ResID) -> Result<FastResID> {
         if self.cache.status != CacheStatus::Restoring {
             return Err(anyhow!("Not in restoring status"));
         }
-        return self.cache.id_table.find_fres_id(res_id);
+        return self.cache.id_table.get_fres_id(res_id);
     }
 
-    pub(crate) fn find_fobj_id(&self, obj_id: &ObjID) -> Result<FastObjID> {
+    pub(crate) fn get_fobj_id(&self, obj_id: &ObjID) -> Result<FastObjID> {
         if self.cache.status != CacheStatus::Restoring {
             return Err(anyhow!("Not in restoring status"));
         }
-        return self.cache.id_table.find_fobj_id(obj_id);
+        return self.cache.id_table.get_fobj_id(obj_id);
     }
 
     pub(crate) fn find_res<R: ResObj>(&self, res_id: &ResID) -> Result<Arc<R>> {
@@ -284,7 +295,7 @@ mod tests {
 
         let stage_id = ResID::from("Stage.Test");
         let stage = cache
-            .find_by_id(&stage_id)
+            .find_res_by_id(&stage_id)
             .unwrap()
             .cast_as::<ResStageGeneral>()
             .unwrap();
@@ -292,7 +303,7 @@ mod tests {
 
         let chara_id = ResID::from("Chara.Test");
         let chara = cache
-            .find_by_id(&chara_id)
+            .find_res_by_id(&chara_id)
             .unwrap()
             .cast_as::<ResCharaGeneral>()
             .unwrap();
@@ -300,18 +311,18 @@ mod tests {
 
         let cmd_id = ResID::from("Command.Test");
         let cmd = cache
-            .find_by_id(&cmd_id)
+            .find_res_by_id(&cmd_id)
             .unwrap()
             .cast_as::<ResCommand>()
             .unwrap();
         assert_eq!(cmd_id, cmd.res_id);
 
         let id_table = cache.id_table();
-        assert!(id_table.find_fres_id(&stage_id).is_ok());
-        assert!(id_table.find_fres_id(&chara_id).is_ok());
-        assert!(id_table.find_fres_id(&cmd_id).is_ok());
+        assert!(id_table.get_fres_id(&stage_id).is_ok());
+        assert!(id_table.get_fres_id(&chara_id).is_ok());
+        assert!(id_table.get_fres_id(&cmd_id).is_ok());
         assert_eq!(id_table.res_count(), 3);
-        assert!(id_table.find_fobj_id(&ObjID::from("Cmd.X1")).is_ok());
+        assert!(id_table.get_fobj_id(&ObjID::from("Cmd.X1")).is_ok());
         assert_eq!(id_table.obj_count(), 1);
     }
 
@@ -326,25 +337,25 @@ mod tests {
         assert_eq!(id_table.res_count(), 3);
         assert_eq!(id_table.obj_count(), 1);
 
-        let stage_id = id_table.find_fres_id(&ResID::from("Stage.Test")).unwrap();
+        let stage_id = id_table.get_fres_id(&ResID::from("Stage.Test")).unwrap();
         let stage = cache
-            .find_by_fid(stage_id)
+            .find_res_by_fid(stage_id)
             .unwrap()
             .cast_as::<ResStageGeneral>()
             .unwrap();
         assert_eq!(stage_id, stage.fres_id);
 
-        let chara_id = id_table.find_fres_id(&ResID::from("Chara.Test")).unwrap();
+        let chara_id = id_table.get_fres_id(&ResID::from("Chara.Test")).unwrap();
         let chara = cache
-            .find_by_fid(chara_id)
+            .find_res_by_fid(chara_id)
             .unwrap()
             .cast_as::<ResCharaGeneral>()
             .unwrap();
         assert_eq!(chara_id, chara.fres_id);
 
-        let cmd_id = id_table.find_fres_id(&ResID::from("Command.Test")).unwrap();
+        let cmd_id = id_table.get_fres_id(&ResID::from("Command.Test")).unwrap();
         let cmd = cache
-            .find_by_fid(cmd_id)
+            .find_res_by_fid(cmd_id)
             .unwrap()
             .cast_as::<ResCommand>()
             .unwrap();
