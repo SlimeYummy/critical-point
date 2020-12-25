@@ -1,5 +1,5 @@
 use super::{StateData, StateDataStatic, StateLifecycle};
-use crate::id::{ClassID, ObjID};
+use crate::id::{ClassID, FastObjID};
 use libc::c_void;
 use std::mem;
 use std::ptr;
@@ -11,11 +11,11 @@ use std::raw::TraitObject;
 
 #[derive(Debug)]
 pub struct StatePoolItem {
-    pub state: *mut u8,
-    pub(super) vtable: *mut u8,
-    pub obj_id: ObjID,
-    pub class_id: ClassID,
-    pub lifecycle: StateLifecycle,
+    pub(crate) state: *mut u8,
+    pub(crate) vtable: *mut u8,
+    pub(crate) fobj_id: FastObjID,
+    pub(crate) class_id: ClassID,
+    pub(crate) lifecycle: StateLifecycle,
 }
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl StatePool {
         return pool;
     }
 
-    pub fn make<S>(&mut self, obj_id: ObjID, lifecycle: StateLifecycle) -> &mut S
+    pub fn make<S>(&mut self, fobj_id: FastObjID, lifecycle: StateLifecycle) -> &mut S
     where
         S: StateData + StateDataStatic,
     {
@@ -56,12 +56,12 @@ impl StatePool {
 
         unsafe {
             let state = &mut *(ptr as *mut S);
-            ptr::write(state, S::init(obj_id, lifecycle));
+            ptr::write(state, S::init(fobj_id, lifecycle));
 
             self.states.push(StatePoolItem {
                 state: ptr,
                 vtable: state_vtable::<S>(),
-                obj_id: state.obj_id(),
+                fobj_id: state.fobj_id(),
                 class_id: state.class_id(),
                 lifecycle: state.lifecycle(),
             });
@@ -215,9 +215,7 @@ union TransmuterTO<'t, TO: ?Sized + 't> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate as core;
-    use crate::derive::StateDataX;
-    use crate::id::CLASS_STAGE;
+    use derive::StateDataX;
 
     #[test]
     fn test_memory_chunk() {
@@ -251,9 +249,9 @@ mod tests {
     }
 
     #[derive(StateDataX, Default)]
-    #[class_id(CLASS_STAGE)]
+    #[class_id(StageGeneral)]
     struct StateTest {
-        obj_id: ObjID,
+        fobj_id: FastObjID,
         lifecycle: StateLifecycle,
         num: u32,
         text: String,
@@ -269,9 +267,9 @@ mod tests {
     }
 
     #[derive(StateDataX)]
-    #[class_id(CLASS_STAGE)]
+    #[class_id(StageGeneral)]
     struct StateTest2 {
-        obj_id: ObjID,
+        fobj_id: FastObjID,
         lifecycle: StateLifecycle,
         data: [u128; 8],
     }
@@ -279,7 +277,7 @@ mod tests {
     impl Default for StateTest2 {
         fn default() -> StateTest2 {
             return StateTest2 {
-                obj_id: ObjID::default(),
+                fobj_id: FastObjID::default(),
                 lifecycle: StateLifecycle::default(),
                 data: [0u128; 8],
             };
@@ -292,7 +290,7 @@ mod tests {
         assert_eq!(sp.chunk_size, 512);
         assert_eq!(sp.threshold_size, 512 / 8);
 
-        let state1 = sp.make::<StateTest>(ObjID::from(1), StateLifecycle::Updated);
+        let state1 = sp.make::<StateTest>(FastObjID::from(1), StateLifecycle::Updated);
         assert_eq!(state1.num, 0);
         assert_eq!(state1.text, String::new());
         assert_eq!(
@@ -300,7 +298,7 @@ mod tests {
             (mem::size_of::<StateTest>() + 15) & !15
         );
 
-        let _ = sp.make::<StateTest2>(ObjID::from(2), StateLifecycle::Updated);
+        let _ = sp.make::<StateTest2>(FastObjID::from(2), StateLifecycle::Updated);
         assert_eq!(sp.buffers.buffers.len(), 1);
     }
 }
