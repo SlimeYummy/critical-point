@@ -26,6 +26,7 @@ struct ResFile {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum CacheStatus {
+    Unknown,
     Compiling,
     Compiled,
     Restoring,
@@ -42,15 +43,20 @@ pub struct ResCache {
 }
 
 impl ResCache {
-    pub fn compile(res_file: &str) -> Result<Arc<ResCache>> {
-        let mut cache = ResCache {
-            status: CacheStatus::Compiling,
+    pub(crate) fn new() -> ResCache {
+        return ResCache {
+            status: CacheStatus::Unknown,
             file_pathes: HashSet::new(),
             id_table: IDTable::new(),
             res_cache: HashMap::new(),
             fres_cache: HashMap::new(),
             shape_cache: HashMap::new(),
         };
+    }
+
+    pub fn compile(res_file: &str) -> Result<Arc<ResCache>> {
+        let mut cache = ResCache::new();
+        cache.status = CacheStatus::Compiling;
 
         let res_path = PathBuf::from(res_file).canonicalize()?;
         cache.load_res_objs(res_path)?;
@@ -62,14 +68,9 @@ impl ResCache {
     }
 
     pub fn restore(res_file: &str, id_file: &str) -> Result<Arc<ResCache>> {
-        let mut cache = ResCache {
-            status: CacheStatus::Restoring,
-            file_pathes: HashSet::new(),
-            id_table: Self::load_file(&PathBuf::from(id_file))?,
-            res_cache: HashMap::new(),
-            fres_cache: HashMap::new(),
-            shape_cache: HashMap::new(),
-        };
+        let mut cache = ResCache::new();
+        cache.status = CacheStatus::Restoring;
+        cache.id_table = Self::load_file(&PathBuf::from(id_file))?;
 
         let res_path = PathBuf::from(res_file).canonicalize()?;
         cache.load_res_objs(res_path)?;
