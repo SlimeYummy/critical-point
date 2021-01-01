@@ -1,5 +1,4 @@
-use crate::engine::LogicObj;
-use crate::engine::StateContext;
+use crate::engine::{LogicObj, StateContext};
 use crate::id::{FastObjID, ResID};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

@@ -1,88 +1,132 @@
 use super::base::{ResLerpFunction, ResLerpParameter};
 use m::{fi, Fx};
-use nalgebra::{UnitComplex, Vector3};
+use nalgebra::{UnitComplex, Vector3, Vector2};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use super::base::{ResObj, ResObjX};
+use super::cache::{CompileContext, RestoreContext};
+use crate::id::{FastObjID, ObjID, FastResID, ResID};
+use anyhow::Result;
+use lazy_static::lazy_static;
+use std::sync::Arc;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+lazy_static! {
+    static ref DEFAULT_ACTION: Arc<ResAction> = Arc::new(ResAction::default());
+}
+
+#[derive(ResObjX, Debug, Default, Clone, Serialize, Deserialize)]
+#[class_id(Action)]
 pub struct ResAction {
-    pub id: String,
-    pub world_transforms: Vec<ResWorldTransform>,
+    pub res_id: ResID,
+    #[serde(skip)]
+    pub fres_id: FastResID,
+    pub actions: Vec<ResActionAny>,
 }
 
-impl ResAction {
-    pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
-        for transform in &mut self.world_transforms {
-            transform.restore(frac_1_fps);
-        }
+#[typetag::serde(name = "Action")]
+impl ResObj for ResAction {
+    fn compile(&mut self, ctx: &mut CompileContext) -> Result<()> {
+        ctx.insert_res_id(&self.res_id)?;
+        return Ok(());
+    }
+
+    fn restore(&mut self, ctx: &mut RestoreContext) -> Result<()> {
+        self.fres_id = ctx.get_fres_id(&self.res_id)?;
+        return Ok(());
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum ResWorldTransform {
-    Velocity(ResWorldVelocity),
-    Towards(ResWorldTowards),
-    Switches(ResWorldSwitches),
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ResActionAny {
 }
 
-impl ResWorldTransform {
-    pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
-        match self {
-            ResWorldTransform::Velocity(velocity) => velocity.restore(frac_1_fps),
-            ResWorldTransform::Towards(towards) => towards.restore(frac_1_fps),
-            ResWorldTransform::Switches(switches) => switches.restore(frac_1_fps),
-        };
-    }
+pub struct ActRun {
+    pub direction: Vector2<Fx>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ResWorldVelocity {
-    pub start_frame: u32,
-    pub finish_frame: u32,
-    pub start_velocity: Vector3<Fx>,
-    pub finish_velocity: Vector3<Fx>,
-    pub start_velocity_frame: Vector3<Fx>,
-    pub finish_velocity_frame: Vector3<Fx>,
-    pub lerp_func: ResLerpFunction,
-    pub lerp_param: ResLerpParameter,
-}
 
-impl ResWorldVelocity {
-    pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
-        self.start_velocity_frame = self.start_velocity * frac_1_fps;
-        self.finish_velocity_frame = self.finish_velocity * frac_1_fps;
-    }
-}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ResWorldTowards {
-    pub start_frame: u32,
-    pub finish_frame: u32,
-    pub start_towards: UnitComplex<Fx>,
-    pub finish_towards: UnitComplex<Fx>,
-    pub start_towards_frame: UnitComplex<Fx>,
-    pub finish_towards_frame: UnitComplex<Fx>,
-    pub lerp_func: ResLerpFunction,
-    pub lerp_param: ResLerpParameter,
-}
 
-impl ResWorldTowards {
-    pub(crate) fn restore(&mut self, _frac_1_fps: Fx) {
-        self.start_towards_frame = self.start_towards;
-        self.finish_towards_frame = self.finish_towards;
-    }
-}
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct ResAction {
+//     pub id: String,
+//     pub world_transforms: Vec<ResWorldTransform>,
+// }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ResWorldSwitches {
-    pub gravity: Vector3<Fx>,
-    pub rebound_force: Vector3<Fx>,
-    pub rebound_times: Fx,
-}
+// impl ResAction {
+//     pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
+//         for transform in &mut self.world_transforms {
+//             transform.restore(frac_1_fps);
+//         }
+//     }
+// }
 
-impl ResWorldSwitches {
-    pub(crate) fn restore(&mut self, _frac_1_fps: Fx) {}
-}
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub enum ResWorldTransform {
+//     Velocity(ResWorldVelocity),
+//     Towards(ResWorldTowards),
+//     Switches(ResWorldSwitches),
+// }
+
+// impl ResWorldTransform {
+//     pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
+//         match self {
+//             ResWorldTransform::Velocity(velocity) => velocity.restore(frac_1_fps),
+//             ResWorldTransform::Towards(towards) => towards.restore(frac_1_fps),
+//             ResWorldTransform::Switches(switches) => switches.restore(frac_1_fps),
+//         };
+//     }
+// }
+
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct ResWorldVelocity {
+//     pub start_frame: u32,
+//     pub finish_frame: u32,
+//     pub start_velocity: Vector3<Fx>,
+//     pub finish_velocity: Vector3<Fx>,
+//     pub start_velocity_frame: Vector3<Fx>,
+//     pub finish_velocity_frame: Vector3<Fx>,
+//     pub lerp_func: ResLerpFunction,
+//     pub lerp_param: ResLerpParameter,
+// }
+
+// impl ResWorldVelocity {
+//     pub(crate) fn restore(&mut self, frac_1_fps: Fx) {
+//         self.start_velocity_frame = self.start_velocity * frac_1_fps;
+//         self.finish_velocity_frame = self.finish_velocity * frac_1_fps;
+//     }
+// }
+
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct ResWorldTowards {
+//     pub start_frame: u32,
+//     pub finish_frame: u32,
+//     pub start_towards: UnitComplex<Fx>,
+//     pub finish_towards: UnitComplex<Fx>,
+//     pub start_towards_frame: UnitComplex<Fx>,
+//     pub finish_towards_frame: UnitComplex<Fx>,
+//     pub lerp_func: ResLerpFunction,
+//     pub lerp_param: ResLerpParameter,
+// }
+
+// impl ResWorldTowards {
+//     pub(crate) fn restore(&mut self, _frac_1_fps: Fx) {
+//         self.start_towards_frame = self.start_towards;
+//         self.finish_towards_frame = self.finish_towards;
+//     }
+// }
+
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct ResWorldSwitches {
+//     pub gravity: Vector3<Fx>,
+//     pub rebound_force: Vector3<Fx>,
+//     pub rebound_times: Fx,
+// }
+
+// impl ResWorldSwitches {
+//     pub(crate) fn restore(&mut self, _frac_1_fps: Fx) {}
+// }
 
 // #[derive(Debug, Deserialize, Serialize)]
 // pub struct ResAction {

@@ -1,8 +1,7 @@
 use super::base::LogicStage;
-use crate::engine::{LogicObj, LogicObjStatic, LogicObjX, NewContext, StateContext};
-use crate::id::{ClassID, FastObjID, FastResID};
-use crate::physic::{PhysicClass, PhysicMeta, PhysicTeam};
-use crate::physic::{PhysicHandle, INVAILD_PHYSIC_HANDLE};
+use crate::engine::{LogicObjX, NewContext, StateContext};
+use crate::id::{FastObjID, FastResID};
+use crate::physic::{PhysicClass, PhysicHandle, PhysicMeta, PhysicTeam, INVAILD_PHYSIC_HANDLE};
 use crate::resource::ResStageGeneral;
 use crate::state::{StateDataX, StateLifecycle};
 use crate::util::RcCell;
@@ -24,7 +23,7 @@ pub struct LogicStageGeneral {
     res: Arc<ResStageGeneral>,
     fobj_id: FastObjID,
     lifecycle: StateLifecycle,
-    coll_handle: PhysicHandle,
+    h_world: PhysicHandle,
 }
 
 impl Drop for LogicStageGeneral {
@@ -37,15 +36,15 @@ impl LogicStageGeneral {
             res: ctx.res.clone(),
             fobj_id: ctx.fobj_id,
             lifecycle: StateLifecycle::Created,
-            coll_handle: INVAILD_PHYSIC_HANDLE,
+            h_world: INVAILD_PHYSIC_HANDLE,
         });
-        let (coll_handle, _) = ctx.new_collision(
+        let (h_world, _) = ctx.new_collision(
             Isometry3::new(na::zero(), na::zero()),
             ctx.res.world.handle.clone(),
             PhysicMeta::new(PhysicClass::Stage, PhysicTeam::None),
             stage.clone(),
         );
-        stage.borrow_mut().coll_handle = coll_handle;
+        stage.borrow_mut().h_world = h_world;
         return stage;
     }
 }

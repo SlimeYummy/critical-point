@@ -1,6 +1,5 @@
 use super::fx::Fx;
 use fixed::types::I32F32;
-use std::mem;
 
 #[inline(always)]
 pub const fn ff(n: f64) -> Fx {
@@ -89,7 +88,7 @@ union F64Union {
 
 #[inline]
 pub const fn fx_f64(n: f64) -> Fx {
-    let bits: u64 = unsafe { F64Union{ f: n }.i };
+    let bits: u64 = unsafe { F64Union { f: n }.i };
     let sign = (bits & 0x8000_0000_0000_0000) as i64;
     let expo = ((bits & 0x7FF0_0000_0000_0000) >> 52) as i64 - 1023;
     let base = ((bits & 0x000F_FFFF_FFFF_FFFF) + 0x0010_0000_0000_0000) as i64;
@@ -116,7 +115,7 @@ union F32Union {
 
 #[inline]
 pub const fn fx_f32(n: f32) -> Fx {
-    let bits: u32 = unsafe { F32Union{ f: n }.i };
+    let bits: u32 = unsafe { F32Union { f: n }.i };
     let sign = ((bits & 0x8000_0000) as i64) << 32;
     let expo = ((bits & 0x7F80_0000) >> 23) as i64 - 127;
     let base = ((bits & 0x007F_FFFF) + 0x0080_0000) as i64;

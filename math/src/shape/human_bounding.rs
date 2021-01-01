@@ -1,5 +1,4 @@
 use crate::auto_gen::RealExt;
-use crate::vector::{p3_to_v3, v3_to_p3};
 use derivative::Derivative;
 use na::{Isometry3, Point3, RealField, Unit, Vector3};
 use ncollide3d::bounding_volume::{self, BoundingSphere, HasBoundingVolume, AABB};
@@ -67,7 +66,7 @@ impl<N: RealField + RealExt> SupportMap<N> for HumanBounding<N> {
             if dir[1] > -N::frac2() {
                 // cone
                 let dir_radius = Vector3::new(dir[0], N::c0(), dir[2]);
-                let pt_local = v3_to_p3(dir_radius.normalize() * self.capsule_radius());
+                let pt_local = dir_radius.normalize() * self.capsule_radius();
                 return Point3::from(pt_local);
             } else {
                 // bottom sphere
@@ -179,7 +178,7 @@ impl<N: RealField + RealExt> PointQuery<N> for HumanBounding<N> {
                 // cone
                 let vec_xz = Vector3::new(pt_local[0], N::c0(), pt_local[2]);
                 if let Some((vec_xz, _)) = Unit::try_new_and_get(vec_xz, N::default_epsilon()) {
-                    let pt_a = v3_to_p3(vec_xz.as_ref() * self.capsule_radius());
+                    let pt_a = (vec_xz.as_ref() * self.capsule_radius()).into();
                     let pt_b = Point3::new(
                         vec_xz[0] * self.bottom_radius(),
                         -self.cone_height(),
@@ -191,8 +190,7 @@ impl<N: RealField + RealExt> PointQuery<N> for HumanBounding<N> {
                         return PointProjection::new(false, transform * pt_a);
                     } else {
                         let pt_proj = transform * pt_local_proj;
-                        let inside =
-                            p3_to_v3(pt_proj).norm_squared() > (pt - pt_proj).norm_squared();
+                        let inside = pt_proj.coords.norm_squared() > (pt - pt_proj).norm_squared();
                         if solid && inside {
                             return PointProjection::new(true, *pt);
                         } else {
@@ -201,7 +199,7 @@ impl<N: RealField + RealExt> PointQuery<N> for HumanBounding<N> {
                     }
                 } else {
                     let height = self.cone_height() + self.bottom_height();
-                    let inside = p3_to_v3(pt_local).norm_squared() <= height * height;
+                    let inside = pt_local.coords.norm_squared() <= height * height;
                     if solid && inside {
                         return PointProjection::new(true, *pt);
                     } else {
@@ -338,7 +336,7 @@ impl<N: RealField + RealExt> Shape<N> for HumanBounding<N> {
 mod tests {
     use super::*;
     use crate::fx::{ff, fi, Fx};
-    use approx::assert_relative_eq;
+    use approx::{assert_relative_eq, relative_eq};
     use na::{Translation3, UnitQuaternion};
 
     #[test]

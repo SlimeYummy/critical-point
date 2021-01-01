@@ -2,7 +2,7 @@
 use super::base::ResObj;
 use super::id_table::IDTable;
 use super::shape::{ShapeCacheKey, ShapeCacheValue};
-use crate::id::{FastObjID, FastResID, ObjID, ResID, FastResIDGener, FastObjIDGener};
+use crate::id::{FastObjID, FastObjIDGener, FastResID, FastResIDGener, ObjID, ResID};
 use anyhow::{anyhow, Context, Result};
 use derivative::Derivative;
 use serde::de::DeserializeOwned;
@@ -198,14 +198,20 @@ impl<'t> CompileContext<'t> {
         if self.cache.status != CacheStatus::Compiling {
             return Err(anyhow!("Not in compiling status"));
         }
-        return self.cache.id_table.insert_res_id(res_id, self.res_gener.gen());
+        return self
+            .cache
+            .id_table
+            .insert_res_id(res_id, self.res_gener.gen());
     }
 
     pub(crate) fn insert_obj_id(&mut self, obj_id: &ObjID) -> Result<()> {
         if self.cache.status != CacheStatus::Compiling {
             return Err(anyhow!("Not in compiling status"));
         }
-        return self.cache.id_table.insert_obj_id(obj_id, self.obj_gener.gen());
+        return self
+            .cache
+            .id_table
+            .insert_obj_id(obj_id, self.obj_gener.gen());
     }
 }
 

@@ -5,11 +5,10 @@ use lazy_static::lazy_static;
 use m::{fi, fx_f64, ConeExt, CylinderExt, Fx, HumanBounding};
 use na::{Point3, Vector3};
 use ncollide3d::shape::{Ball, Capsule, Cuboid, ShapeHandle, TriMesh};
-use wavefront_obj::obj::{self, Primitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::fs;
-use std::io::BufReader;
+use wavefront_obj::obj::{self, Primitive};
 
 pub(crate) type ShapeCacheKey = ResShapeAny;
 pub(crate) type ShapeCacheValue = ShapeHandle<Fx>;
@@ -161,8 +160,8 @@ impl ResShapeTriMesh {
 
     fn load_obj(file: &str) -> Result<ShapeHandle<Fx>> {
         let buf = fs::read_to_string(file)?;
-        let model = wavefront_obj::obj::parse(buf)?;
-        
+        let model = obj::parse(buf)?;
+
         let mut vertices = Vec::<Point3<Fx>>::new();
         let mut indices = Vec::<Point3<usize>>::new();
 
@@ -170,7 +169,7 @@ impl ResShapeTriMesh {
             for vtx in obj.vertices {
                 vertices.push(Point3::new(fx_f64(vtx.x), fx_f64(vtx.y), fx_f64(vtx.z)));
             }
-    
+
             for geo in obj.geometry {
                 for shape in geo.shapes {
                     match shape.primitive {

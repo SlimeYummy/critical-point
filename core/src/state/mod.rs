@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 
 mod base;
-mod state_pool;
 mod state_bus;
+mod state_pool;
 
 pub use base::{StateData, StateDataStatic, StateLifecycle};
 pub(crate) use derive::StateDataX;
-pub use state_pool::StatePool;
 pub use state_bus::{StateBinder, StateBus, StateRef};
+pub use state_pool::StatePool;
 
 #[cfg(test)]
 mod tests {

@@ -1,7 +1,7 @@
-// mod action;
+mod action;
 mod base;
 mod cache;
-mod chara;
+mod character;
 mod command;
 mod id_table;
 mod lerp;
@@ -10,10 +10,10 @@ mod shape;
 mod stage;
 // mod skill;
 
-// pub use action::*;
+pub use action::{ResAction};
 pub use base::{ResObj, ResObjStatic, ResObjSuper};
 pub use cache::{CompileContext, ResCache, RestoreContext};
-pub use chara::ResCharaGeneral;
+pub use character::ResCharaGeneral;
 pub use command::{ResCommand, ResCommandAny};
 pub use id_table::IDTable;
 pub use shape::{
