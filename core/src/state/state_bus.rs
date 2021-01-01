@@ -114,14 +114,12 @@ where
 
     #[inline]
     pub fn is_vaild(&self) -> bool {
-        return self.inner_ref().fobj_id.is_valid()
-            && self.inner_ref().binder.is_valid();
+        return self.inner_ref().fobj_id.is_valid() && self.inner_ref().binder.is_valid();
     }
 
     #[inline]
     pub fn is_invaild(&self) -> bool {
-        return self.inner_ref().fobj_id.is_invalid()
-            && self.inner_ref().binder.is_invalid();
+        return self.inner_ref().fobj_id.is_invalid() && self.inner_ref().binder.is_invalid();
     }
 
     #[inline]
@@ -396,9 +394,12 @@ mod tests {
     fn test_state_bus_register() {
         let bus = StateBus::new();
         {
-            let re1 = StateRef::<DataTest>::new_and_start(FastObjID::from(123), bus.new_binder()).unwrap();
-            let re2 = StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder()).unwrap();
-            let re3 = StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder()).unwrap();
+            let re1 = StateRef::<DataTest>::new_and_start(FastObjID::from(123), bus.new_binder())
+                .unwrap();
+            let re2 = StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder())
+                .unwrap();
+            let re3 = StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder())
+                .unwrap();
 
             assert_eq!(
                 bus.bus.borrow().inners[&re1.fobj_id()],
@@ -423,11 +424,16 @@ mod tests {
 
     #[test]
     fn test_state_bus_update() {
-        let mut bus = StateBus::new();
+        let bus = StateBus::new();
+        let mut bus_inner = bus.bus.clone();
+        let bus_ptr = unsafe { Rc::get_mut_unchecked(&mut bus_inner) };
 
-        let re1 = StateRef::<DataTest>::new_and_start(FastObjID::from(123), bus.new_binder()).unwrap();
-        let re2 = StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder()).unwrap();
-        let re3 = StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder()).unwrap();
+        let re1 =
+            StateRef::<DataTest>::new_and_start(FastObjID::from(123), bus.new_binder()).unwrap();
+        let re2 =
+            StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder()).unwrap();
+        let re3 =
+            StateRef::<DataTest>::new_and_start(FastObjID::from(456), bus.new_binder()).unwrap();
 
         let mut state = DataTest {
             fobj_id: FastObjID::invalid(),
@@ -443,20 +449,20 @@ mod tests {
             fobj_id: FastObjID::invalid(),
             lifecycle: StateLifecycle::Updated,
         };
-        StateBus::update_state(Rc::get_mut(&mut bus.bus).unwrap().get_mut(), &item);
+        StateBus::update_state(bus_ptr.get_mut(), &item);
         assert!(re1.state().is_err());
         assert!(re3.state().is_err());
 
         item.fobj_id = FastObjID::from(123);
-        StateBus::update_state(Rc::get_mut(&mut bus.bus).unwrap().get_mut(), &item);
+        StateBus::update_state(bus_ptr.get_mut(), &item);
         assert_eq!(re1.state().unwrap().num, 0xABCD);
 
         item.fobj_id = FastObjID::from(456);
-        StateBus::update_state(Rc::get_mut(&mut bus.bus).unwrap().get_mut(), &item);
+        StateBus::update_state(bus_ptr.get_mut(), &item);
         assert_eq!(re2.state().unwrap().num, 0xABCD);
         assert_eq!(re3.state().unwrap().num, 0xABCD);
 
-        StateBus::clear_all_states(Rc::get_mut(&mut bus.bus).unwrap().get_mut());
+        StateBus::clear_all_states(bus_ptr.get_mut());
         assert!(re1.state().is_err());
         assert!(re2.state().is_err());
         assert!(re3.state().is_err());

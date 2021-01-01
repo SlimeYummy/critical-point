@@ -18,11 +18,9 @@ mod auto_gen;
 mod fx;
 mod near;
 mod shape;
-mod vector;
 
 pub use algorithm::*;
 pub use auto_gen::*;
 pub use fx::*;
 pub use near::*;
 pub use shape::*;
-pub use vector::*;
