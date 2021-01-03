@@ -1,0 +1,16 @@
+{
+    "resource": [
+        {
+            "type": "Command",
+            "res_id": "Command.Test",
+            "command_id": "Command.Test",
+            "commands": [
+                {
+                    "type": "NewStageGeneral",
+                    "obj_id": "Cmd.X1",
+                    "res_id": "Stage.Test"
+                }
+            ]
+        }
+    ]
+}

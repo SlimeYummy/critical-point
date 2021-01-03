@@ -1,0 +1,6 @@
+res_table:
+  Stage.Test: 1
+  Chara.Test: 2
+  Command.Test: 3
+obj_table:
+  Cmd.X1: 1
