@@ -8,9 +8,12 @@ reference:
     translation: [0, 0.85, 0]
 
 resource:
-- type: Character
-  id: Character
+- type: CharaGeneral
+  res_id: Chara.Test
   collision: *collision
+  origin:
+    rotation: [0, 0, 0]
+    translation: [0, 0, 0]
   transform: *transform
   max_health: 10000
   max_energy: 1000

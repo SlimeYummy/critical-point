@@ -1,0 +1,4 @@
+include:
+- stage.json
+- action.yml
+- character.yml
