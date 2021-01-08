@@ -20,6 +20,7 @@ pub enum ClassID {
     StageGeneral = 0x0101,
     CharaGeneral = 0x0201,
     Skill = 0x0301,
+    Action = 0xFFFE,
     Command = 0xFFFF,
 }
 
@@ -54,6 +55,10 @@ impl ClassID {
         return ((*self as usize) & 0xFF00) == 0x0300;
     }
 
+    pub fn is_action(&self) -> bool {
+        return (*self as usize) == 0xFFFE;
+    }
+
     pub fn is_command(&self) -> bool {
         return (*self as usize) == 0xFFFF;
     }
@@ -80,5 +85,8 @@ mod tests {
 
         assert_eq!(ClassID::Command.is_command(), true);
         assert_eq!(ClassID::Command.is_skill(), false);
+
+        assert_eq!(ClassID::Action.is_action(), true);
+        assert_eq!(ClassID::Action.is_command(), false);
     }
 }
