@@ -1,4 +1,4 @@
-use failure::{format_err, Error};
+use anyhow::{anyhow, Error};
 use gdnative::prelude::user_data::LocalCellError;
 
 pub trait ResultExt<T> {
@@ -10,12 +10,12 @@ impl<T> ResultExt<T> for Result<T, LocalCellError> {
         return match self {
             Ok(val) => Ok(val),
             Err(err) => match err {
-                LocalCellError::DifferentThread { original, current } => Err(format_err!(
+                LocalCellError::DifferentThread { original, current } => Err(anyhow!(
                     "LocalCellError::BorrowFailed({:?}, {:?})",
                     original,
                     current
                 )),
-                LocalCellError::BorrowFailed => Err(format_err!("LocalCellError::BorrowFailed")),
+                LocalCellError::BorrowFailed => Err(anyhow!("LocalCellError::BorrowFailed")),
             },
         };
     }
