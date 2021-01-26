@@ -127,15 +127,7 @@ impl Mul for Fx {
     type Output = Self;
     #[inline(always)]
     fn mul(self, rhs: Self) -> Self {
-        Self(self.0 * rhs.0)
-    }
-}
-
-impl Mul<i64> for Fx {
-    type Output = Self;
-    #[inline(always)]
-    fn mul(self, rhs: i64) -> Self {
-        Self(self.0 * rhs)
+        Self(self.0.saturating_mul(rhs.0))
     }
 }
 
@@ -143,15 +135,17 @@ impl Div for Fx {
     type Output = Self;
     #[inline(always)]
     fn div(self, rhs: Self) -> Self {
-        Self(self.0 / rhs.0)
-    }
-}
-
-impl Div<i64> for Fx {
-    type Output = Self;
-    #[inline(always)]
-    fn div(self, rhs: i64) -> Self {
-        Self(self.0 / rhs)
+        if !rhs.is_zero() {
+            Self(self.0.saturating_div(rhs.0))
+        } else {
+            if self.0 > 0 {
+                Self::max_value()
+            } else if self.0 < 0 {
+                Self::min_value()
+            } else {
+                Self::zero()
+            }
+        }
     }
 }
 
@@ -159,15 +153,11 @@ impl Rem for Fx {
     type Output = Self;
     #[inline(always)]
     fn rem(self, rhs: Self) -> Self {
-        Self(self.0 % rhs.0)
-    }
-}
-
-impl Rem<i64> for Fx {
-    type Output = Self;
-    #[inline(always)]
-    fn rem(self, rhs: i64) -> Self {
-        Self(self.0 % rhs)
+        if !rhs.is_zero() {
+            Self(self.0 % rhs.0)
+        } else {
+            Self::zero()
+        }
     }
 }
 
@@ -175,7 +165,7 @@ impl Add for Fx {
     type Output = Self;
     #[inline(always)]
     fn add(self, rhs: Self) -> Self {
-        Self(self.0 + rhs.0)
+        Self(self.0.saturating_add(rhs.0))
     }
 }
 
@@ -183,7 +173,7 @@ impl Sub for Fx {
     type Output = Self;
     #[inline(always)]
     fn sub(self, rhs: Self) -> Self {
-        Self(self.0 - rhs.0)
+        Self(self.0.saturating_sub(rhs.0))
     }
 }
 
@@ -202,13 +192,6 @@ impl MulAssign for Fx {
     }
 }
 
-impl MulAssign<i64> for Fx {
-    #[inline(always)]
-    fn mul_assign(&mut self, rhs: i64) {
-        self.0 *= rhs
-    }
-}
-
 impl DivAssign for Fx {
     #[inline(always)]
     fn div_assign(&mut self, rhs: Self) {
@@ -216,24 +199,10 @@ impl DivAssign for Fx {
     }
 }
 
-impl DivAssign<i64> for Fx {
-    #[inline(always)]
-    fn div_assign(&mut self, rhs: i64) {
-        self.0 /= rhs
-    }
-}
-
 impl RemAssign for Fx {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: Self) {
         self.0 %= rhs.0
-    }
-}
-
-impl RemAssign<i64> for Fx {
-    #[inline(always)]
-    fn rem_assign(&mut self, rhs: i64) {
-        self.0 %= rhs
     }
 }
 
