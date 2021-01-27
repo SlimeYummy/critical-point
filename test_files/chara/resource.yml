@@ -1,0 +1,3 @@
+include:
+- ../common/stage.yml
+- ../common/chara.yml

@@ -3,7 +3,6 @@
         {
             "type": "Command",
             "res_id": "Command.Test",
-            "command_id": "Command.Test",
             "commands": [
                 {
                     "type": "NewStageGeneral",

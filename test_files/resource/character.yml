@@ -11,7 +11,7 @@ resource:
 - type: CharaGeneral
   res_id: Chara.Test
   collision: *collision
-  origin:
+  position:
     rotation: [0, 0, 0]
     translation: [0, 0, 0]
   transform: *transform

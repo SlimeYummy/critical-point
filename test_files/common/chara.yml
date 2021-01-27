@@ -1,0 +1,24 @@
+resource:
+
+- type: CharaGeneral
+  res_id: Chara.Main
+  collision:
+    type: Capsule
+    half_height: 0.4
+    radius: 0.5
+    transform:
+      rotation: [0, 0, 0]
+      translation: [0, 0.9, 0]
+  position:
+    rotation: [0, 0, 0]
+    translation: [0, 0, 0]
+  max_health: 10000
+  max_energy: 10000
+  max_posture: 1000
+  move_speed: 5
+  physical_attack: 100
+  physical_defense: 100
+  elemental_attack: 100
+  elemental_defense: 100
+  arcane_attack: 100
+  arcane_defense: 100
