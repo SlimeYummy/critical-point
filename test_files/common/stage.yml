@@ -1,0 +1,15 @@
+resource:
+
+- type: StageGeneral
+  res_id: Stage.Plane
+  world: 
+    type: Plane
+    nx: 0
+    ny: 1
+    nz: 0
+
+- type: StageGeneral
+  res_id: Stage.TriMesh
+  world: 
+    type: TriMesh
+    file: ./stage.obj

@@ -1,0 +1,30 @@
+{
+    "include": [
+        "command.json",
+        "character.yml"
+    ],
+    "resource": [
+        {
+            "type": "StageGeneral",
+            "res_id": "Stage.Test",
+            "world": {
+                "type": "Cuboid",
+                "x": 100,
+                "y": 1,
+                "z": 100
+            },
+            "props": [
+                {
+                    "shape": {
+                        "type": "Ball",
+                        "radius": 1
+                    },
+                    "position": {
+                        "rotation": [0, 0, 0],
+                        "translation": [0, 0, 0]
+                    }
+                }
+            ]
+        }
+    ]
+}
