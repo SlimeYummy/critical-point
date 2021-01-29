@@ -6,7 +6,7 @@ use gdnative::api::{
     InputEventMouseMotion, InputMap,
 };
 use gdnative::prelude::*;
-use na::{Rotation3, Vector3};
+use na::{Matrix3, Rotation3, Vector3};
 use std::f32::consts::{FRAC_PI_2, PI};
 
 pub struct AppControl {
@@ -62,6 +62,8 @@ impl AppControl {
             || self.attack(owner, event.clone())?
             || self.switch_mouse_mode(event.clone())?;
         unsafe { owner.scene_tree()? }.set_input_as_handled();
+
+        self.camera.global_transform(owner)?;
         return Ok(());
     }
 
@@ -157,6 +159,27 @@ impl AppCamera {
         };
     }
 
+    fn global_transform(&mut self, owner: &Node) -> Result<()> {
+        let camera = unsafe { owner.typed_node_tref::<Camera, _>("Character/Camera") }?;
+        let transform = camera.global_transform();
+
+        let vec: Vector3<f32> = Vector3::new(0.0, 0.0, -1.0);
+        let elements = transform.basis.elements;
+        let rot: Rotation3<f32> = Rotation3::from_matrix(&Matrix3::from_vec(vec![
+            elements[0].x,
+            elements[1].x,
+            elements[2].x,
+            elements[0].y,
+            elements[1].y,
+            elements[2].y,
+            elements[0].z,
+            elements[1].z,
+            elements[2].z,
+        ]));
+        godot_print!("{:?}", rot * vec);
+        return Ok(());
+    }
+
     fn move_camera(&mut self, owner: &Node, event: TRef<'_, InputEvent>) -> Result<bool> {
         let ev = match event.cast::<InputEventMouseMotion>() {
             Some(ev) => ev,
@@ -179,9 +202,9 @@ impl AppCamera {
         let camera = unsafe { owner.typed_node_tref::<Camera, _>("Character/Camera") }?;
         camera.set_transform(Transform {
             basis: Basis::from_elements([
-                Vector3D::new(mat[(0, 0)], mat[(1, 0)], mat[(2, 0)]),
-                Vector3D::new(mat[(0, 1)], mat[(1, 1)], mat[(2, 1)]),
-                Vector3D::new(mat[(0, 2)], mat[(1, 2)], mat[(2, 2)]),
+                Vector3D::new(mat.m11, mat.m21, mat.m31),
+                Vector3D::new(mat.m12, mat.m22, mat.m32),
+                Vector3D::new(mat.m13, mat.m23, mat.m33),
             ]),
             origin: Vector3D::new(
                 self.target.x + eye.x,
