@@ -1,44 +1,60 @@
-use crate::core_ex::{GdSyncCore, SyncStateRef};
-use crate::util::{NodeExt, ResultExt};
-use core::agent::SyncStateReg;
-use core::id::{ObjID, CLASS_STAGE};
-use core::logic::StateStage;
-use core::state::StateOwnerX;
-use core::util::try_result;
+use crate::core_ex::{RES_CACHE, SYNC_AGENT};
+use anyhow::Result;
+use core::id::{FastObjID, ObjID};
+use core::stage::StateStageGeneral;
+use core::state::StateRef;
 use gdnative::prelude::*;
 
-#[derive(StateOwnerX, NativeClass)]
+#[derive(NativeClass)]
 #[inherit(Spatial)]
-#[user_data(LocalCellData<GdStage>)]
-#[class_id(CLASS_STAGE)]
-pub struct GdStage {
+#[register_with(register_properties)]
+#[user_data(LocalCellData<StageGeneral>)]
+pub struct StageGeneral {
     obj_id: ObjID,
-    state: SyncStateRef<StateStage>,
+    state: StateRef<StateStageGeneral>,
+}
+
+fn register_properties(builder: &ClassBuilder<StageGeneral>) {
+    builder
+        .add_property::<String>("critical_point/obj_id")
+        .with_default(ObjID::invalid().into())
+        .with_getter(|app: &StageGeneral, _| app.obj_id.clone().into())
+        .with_setter(|app: &mut StageGeneral, _, val: String| app.obj_id = ObjID::from(val))
+        .done();
 }
 
 #[methods]
-impl GdStage {
-    fn new(_: &Spatial) -> GdStage {
-        godot_print!("GdStage::new()");
+impl StageGeneral {
+    fn new(_: &Spatial) -> StageGeneral {
+        godot_print!("StageGeneral::new()");
 
-        let obj_id = ObjID::from(100000);
-        return GdStage {
-            obj_id,
-            state: SyncStateRef::new(obj_id, SyncStateReg::default()),
+        return StageGeneral {
+            obj_id: ObjID::invalid(),
+            state: StateRef::invaild(),
         };
     }
 
     #[export]
     fn _ready(&mut self, owner: &Spatial) {
-        godot_print!("GdStage::_ready()");
+        godot_print!("StageGeneral::_ready() => call");
+        owner.set_physics_process(true);
 
-        try_result(|| {
-            let core =
-                unsafe { owner.root_instance_ref::<GdSyncCore, Node, _>("./Root/SyncCore")? };
-            let agent = core.map_mut(|core, _| core.get_agent()).cast_err()?;
-            self.state.set_reg(SyncStateReg::new(&agent))?;
-            self.state.register()
-        })
-        .expect("GdStage::_ready()");
+        let result: Result<()> = try {
+            let fobj_id = RES_CACHE().get_fobj_id(&self.obj_id)?;
+            let binder = SYNC_AGENT().new_binder();
+            self.state.start(fobj_id, binder)?;
+        };
+        if let Err(err) = result {
+            godot_error!("StageGeneral::_ready() => {:?}", err);
+        }
+    }
+
+    #[export]
+    fn _physics_process(&mut self, _owner: &Spatial, _delta: f64) {
+        // if let Ok(state) = self.state.state() {
+        //     godot_print!("{:?}", state);
+        // } else {
+        //     godot_print!("null");
+        // }
     }
 }
