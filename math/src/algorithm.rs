@@ -41,7 +41,7 @@ pub fn cone_from_unit_vec(
     let v1 = nv2.xyz() - nv1.xyz();
     let v2 = nv3.xyz() - nv1.xyz();
     let n = Vector3::cross(&v1, &v2);
-    if approx_zero(&n) {
+    if approx_zero(n) {
         return None;
     }
     let t =
