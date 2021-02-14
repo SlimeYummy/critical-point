@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use thiserror::Error;
 
 pub fn try_option<T, F>(f: F) -> Option<T>
 where
@@ -26,3 +27,13 @@ impl<T> OptionEx<T> for Option<T> {
         };
     }
 }
+
+#[derive(Error, Debug)]
+pub enum CPError {
+    #[error("Unknown error")]
+    Unknown,
+    #[error("Physics object not found")]
+    PhysicsObjectNotFound,
+}
+
+pub type CPResult<T> = anyhow::Result<T, CPError>;
