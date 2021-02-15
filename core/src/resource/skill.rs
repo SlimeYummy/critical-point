@@ -5,7 +5,7 @@ use derivative::Derivative;
 use m::Fx;
 use na::Isometry3;
 use nalgebra::{Point3, Translation3, UnitQuaternion};
-use ncollide3d::shape::ShapeHandle;
+use crate::physics::shape::ShapeHandle;
 use serde::{Deserialize, Serialize};
 
 #[derive(Derivative, Clone, Deserialize, Serialize)]

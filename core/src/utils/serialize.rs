@@ -11,10 +11,11 @@ where
     P: AsRef<Path>,
     T: Serialize,
 {
-    let file = File::open(path.as_ref())?;
-    if path.as_ref().ends_with(".yaml") || path.as_ref().ends_with(".yml") {
+    let file = File::create(path.as_ref())?;
+    let ext = path.as_ref().extension().unwrap_or(Default::default());
+    if ext == "yaml" || ext == "yml" {
         return Ok(serde_yaml::to_writer(file, value)?);
-    } else if path.as_ref().ends_with(".json") {
+    } else if ext == "json" {
         return Ok(serde_json::to_writer(file, value)?);
     } else {
         return Err(anyhow!("Unknown format ({:?})", path.as_ref()));
@@ -27,9 +28,10 @@ where
     T: DeserializeOwned,
 {
     let file = File::open(path.as_ref())?;
-    if path.as_ref().ends_with(".yaml") || path.as_ref().ends_with(".yml") {
+    let ext = path.as_ref().extension().unwrap_or(Default::default());
+    if ext == "yaml" || ext == "yml" {
         return Ok(serde_yaml::from_reader(file)?);
-    } else if path.as_ref().ends_with(".json") {
+    } else if ext == "json" {
         return Ok(serde_json::from_reader(file)?);
     } else {
         return Err(anyhow!("Unknown format ({:?})", path.as_ref()));

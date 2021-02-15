@@ -11,6 +11,7 @@ name = "critical_point_gd"
 [dependencies]
 anyhow = "1.0.34"
 core = { path = "../core" }
+derivative = "2.2.0"
 euclid = "0.22.1"
 gdnative = "0.9.1"
 lazy_static = "1.4.0"
@@ -19,3 +20,4 @@ math = { path = "../math" }
 nalgebra = { version = "0.23.0", features = [ "serde-serialize" ] }
 serde = "1.0.117"
 serde_json = "1.0.59"
+serde_yaml = "0.8.14"

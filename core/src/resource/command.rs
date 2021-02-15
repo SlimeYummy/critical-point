@@ -1,8 +1,8 @@
 use super::base::{ResObj, ResObjX};
 use super::cache::{CompileContext, RestoreContext};
-use crate::character::CmdNewCharaGeneral;
+use crate::character::CmdNewCharaHuman;
 use crate::engine::Command;
-use crate::id::{FastObjID, ObjID, FastResID, ResID};
+use crate::id::{FastObjID, FastResID, ObjID, ResID};
 use crate::stage::CmdNewStageGeneral;
 use anyhow::Result;
 use lazy_static::lazy_static;
@@ -33,7 +33,7 @@ impl ResCommand {
             .iter()
             .map(|cmd| match cmd {
                 ResCommandAny::NewStageGeneral(cmd) => cmd.to_command(),
-                ResCommandAny::NewCharaGeneral(cmd) => cmd.to_command(),
+                ResCommandAny::NewCharaHuman(cmd) => cmd.to_command(),
             })
             .collect();
     }
@@ -46,7 +46,7 @@ impl ResObj for ResCommand {
         for cmd in &mut self.commands {
             match cmd {
                 ResCommandAny::NewStageGeneral(cmd) => cmd.compile(ctx),
-                ResCommandAny::NewCharaGeneral(cmd) => cmd.compile(ctx),
+                ResCommandAny::NewCharaHuman(cmd) => cmd.compile(ctx),
             }?;
         }
         return Ok(());
@@ -57,7 +57,7 @@ impl ResObj for ResCommand {
         for cmd in &mut self.commands {
             match cmd {
                 ResCommandAny::NewStageGeneral(cmd) => cmd.restore(ctx),
-                ResCommandAny::NewCharaGeneral(cmd) => cmd.restore(ctx),
+                ResCommandAny::NewCharaHuman(cmd) => cmd.restore(ctx),
             }?;
         }
         return Ok(());
@@ -68,7 +68,7 @@ impl ResObj for ResCommand {
 #[serde(tag = "type")]
 pub enum ResCommandAny {
     NewStageGeneral(ResCmdNewStageGeneral),
-    NewCharaGeneral(ResCmdNewCharaGeneral),
+    NewCharaHuman(ResCmdNewCharaHuman),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -99,14 +99,14 @@ impl ResCmdNewStageGeneral {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResCmdNewCharaGeneral {
+pub struct ResCmdNewCharaHuman {
     pub obj_id: ObjID,
     #[serde(skip)]
     pub fobj_id: FastObjID,
     pub res_id: ResID,
 }
 
-impl ResCmdNewCharaGeneral {
+impl ResCmdNewCharaHuman {
     fn compile(&mut self, ctx: &mut CompileContext) -> Result<()> {
         ctx.insert_obj_id(&self.obj_id)?;
         return Ok(());
@@ -118,7 +118,7 @@ impl ResCmdNewCharaGeneral {
     }
 
     pub fn to_command(&self) -> Command {
-        return Command::NewCharaGeneral(CmdNewCharaGeneral {
+        return Command::NewCharaHuman(CmdNewCharaHuman {
             fobj_id: self.fobj_id,
             res_id: self.res_id.clone(),
         });

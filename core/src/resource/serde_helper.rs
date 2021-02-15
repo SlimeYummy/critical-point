@@ -1,9 +1,18 @@
+#![allow(dead_code)]
+
+pub fn bool_false() -> bool {
+    return false;
+}
+
+pub fn bool_true() -> bool {
+    return true;
+}
+
 pub mod isometry {
     use m::{Fx, RealExt};
     use na::{Isometry3, Translation3, UnitQuaternion};
-    use serde::de::MapAccess;
-    use serde::ser::SerializeStruct;
-    use serde::{de, Deserializer, Serializer};
+    use serde::de::{Deserializer, MapAccess, Visitor};
+    use serde::ser::{SerializeStruct, Serializer};
     use std::fmt;
 
     pub fn serialize<S: Serializer>(
@@ -24,7 +33,7 @@ pub mod isometry {
 
     struct Isometry3Visitor;
 
-    impl<'de> de::Visitor<'de> for Isometry3Visitor {
+    impl<'de> Visitor<'de> for Isometry3Visitor {
         type Value = Isometry3<Fx>;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

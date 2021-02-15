@@ -1,6 +1,6 @@
 resource:
 
-- type: CharaGeneral
+- type: CharaHuman
   res_id: Chara.Main
   collision:
     type: Capsule
