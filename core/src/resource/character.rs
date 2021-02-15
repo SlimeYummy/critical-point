@@ -10,14 +10,14 @@ use na::Isometry3;
 use serde::{Deserialize, Serialize};
 
 #[derive(ResObjX, Debug, Clone, Serialize, Deserialize)]
-#[class_id(CharaGeneral)]
-pub struct ResCharaGeneral {
+#[class_id(CharaHuman)]
+pub struct ResCharaHuman {
     pub res_id: ResID,
     #[serde(skip)]
     pub fres_id: FastResID,
     pub collision: ResShape,
     #[serde(with = "serde_helper::isometry")]
-    pub origin: Isometry3<Fx>,
+    pub position: Isometry3<Fx>,
     pub max_health: i32,
     pub max_energy: i32,
     pub max_posture: i32,
@@ -30,8 +30,8 @@ pub struct ResCharaGeneral {
     pub arcane_defense: i32,
 }
 
-#[typetag::serde(name = "CharaGeneral")]
-impl ResObj for ResCharaGeneral {
+#[typetag::serde(name = "CharaHuman")]
+impl ResObj for ResCharaHuman {
     fn compile(&mut self, ctx: &mut CompileContext) -> Result<()> {
         ctx.insert_res_id(&self.res_id)?;
         return Ok(());
@@ -53,7 +53,7 @@ mod tests {
 
     // #[test]
     // fn test_res_character() {
-    //     let c1 = ResCharaGeneral {
+    //     let c1 = ResCharaHuman {
     //         id: String::from("Character"),
     //         collision: ResShape::Ball(ResBall { radius: fi(1) }),
     //         h_bounding: ResShapeCache::default_handle(),
@@ -70,7 +70,7 @@ mod tests {
     //         arcane_defense: 400,
     //     };
     //     let json = serde_json::to_string(&c1).unwrap();
-    //     let c2 = serde_json::from_str::<ResCharaGeneral>(&json).unwrap();
+    //     let c2 = serde_json::from_str::<ResCharaHuman>(&json).unwrap();
     //     assert_eq!(c1.id, c2.id);
     //     assert_eq!(c1.collision, c2.collision);
     //     relative_eq!(c1.origin, c2.origin);

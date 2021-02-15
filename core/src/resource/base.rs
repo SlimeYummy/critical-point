@@ -42,8 +42,6 @@ impl Default for ResLerpFunction {
     }
 }
 
-pub type ResLerpParameter = [Fx; 4];
-
 pub trait ResObjStatic {
     fn id() -> ClassID;
 }

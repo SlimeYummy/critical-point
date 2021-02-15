@@ -3,14 +3,11 @@ use super::base::ResObj;
 use super::id_table::IDTable;
 use super::shape::{ShapeCacheKey, ShapeCacheValue};
 use crate::id::{FastObjID, FastObjIDGener, FastResID, FastResIDGener, ObjID, ResID};
+use crate::utils::deserialize;
 use anyhow::{anyhow, Context, Result};
 use derivative::Derivative;
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json;
-use serde_yaml;
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -70,7 +67,7 @@ impl ResCache {
     pub fn restore(res_file: &str, id_file: &str) -> Result<Arc<ResCache>> {
         let mut cache = ResCache::new();
         cache.status = CacheStatus::Restoring;
-        cache.id_table = Self::load_file(&PathBuf::from(id_file))?;
+        cache.id_table = deserialize(&PathBuf::from(id_file))?;
 
         let res_path = PathBuf::from(res_file).canonicalize()?;
         cache.load_res_objs(res_path)?;
@@ -85,8 +82,7 @@ impl ResCache {
         if self.file_pathes.contains(&res_path) {
             return Ok(());
         }
-        let res_file: ResFile =
-            Self::load_file(&res_path).with_context(|| format!("file {:?}", res_path))?;
+        let res_file: ResFile = deserialize(&res_path).context(format!("file {:?}", res_path))?;
         self.file_pathes.insert(res_path.clone());
 
         for res in &res_file.resource {
@@ -138,19 +134,6 @@ impl ResCache {
         res_path.push(sub_path);
         res_path = res_path.canonicalize()?;
         return Ok(res_path);
-    }
-
-    fn load_file<D: DeserializeOwned>(file_path: &PathBuf) -> Result<D> {
-        if let Some(extension) = file_path.extension() {
-            if extension == "yml" || extension == "yaml" {
-                let file = File::open(file_path)?;
-                return Ok(serde_yaml::from_reader(file)?);
-            } else if extension == "json" {
-                let file = File::open(file_path)?;
-                return Ok(serde_json::from_reader(file)?);
-            }
-        }
-        return Err(anyhow!("Unknown file foramt"));
     }
 }
 
@@ -219,6 +202,7 @@ pub struct RestoreContext<'t> {
     cache: &'t mut ResCache,
 }
 
+#[allow(dead_code)]
 impl<'t> RestoreContext<'t> {
     pub(crate) fn get_fres_id(&self, res_id: &ResID) -> Result<FastResID> {
         if self.cache.status != CacheStatus::Restoring {
@@ -289,14 +273,14 @@ impl<'t> RestoreContext<'t> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::chara::ResCharaGeneral;
-    use super::super::command::ResCommand;
-    use super::super::stage::ResStageGeneral;
     use super::*;
+    use crate::resource::character::ResCharaHuman;
+    use crate::resource::command::ResCommand;
+    use crate::resource::stage::ResStageGeneral;
 
     #[test]
     fn test_res_cache_compile() {
-        let cache = ResCache::compile("../test_files/resource.yaml").unwrap();
+        let cache = ResCache::compile("../test_files/resource/resource.yaml").unwrap();
         assert_eq!(cache.res_cache.len(), 3);
         assert_eq!(cache.fres_cache.len(), 0);
 
@@ -312,7 +296,7 @@ mod tests {
         let chara = cache
             .find_res_by_id(&chara_id)
             .unwrap()
-            .cast_as::<ResCharaGeneral>()
+            .cast_as::<ResCharaHuman>()
             .unwrap();
         assert_eq!(chara_id, chara.res_id);
 
@@ -335,8 +319,11 @@ mod tests {
 
     #[test]
     fn test_res_cache_restore() {
-        let cache =
-            ResCache::restore("../test_files/resource.yaml", "../test_files/id.yml").unwrap();
+        let cache = ResCache::restore(
+            "../test_files/resource/resource.yaml",
+            "../test_files/resource/id.yml",
+        )
+        .unwrap();
         assert_eq!(cache.res_cache.len(), 3);
         assert_eq!(cache.fres_cache.len(), 3);
 
@@ -356,7 +343,7 @@ mod tests {
         let chara = cache
             .find_res_by_fid(chara_id)
             .unwrap()
-            .cast_as::<ResCharaGeneral>()
+            .cast_as::<ResCharaHuman>()
             .unwrap();
         assert_eq!(chara_id, chara.fres_id);
 

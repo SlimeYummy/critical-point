@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use ncollide3d::shape::ShapeHandle;
+use crate::physics::ShapeHandle;
 use crate::utils::Fx;
 
 struct ModelRepository {
-    repository: HashMap<String, ShapeHandle<Fx>>,
+    repository: HashMap<String, ShapeHandle>,
 }
 
 impl ModelRepository {

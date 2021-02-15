@@ -1,4 +1,4 @@
-use crate::id::{FastObjID, FastObjIDGener, FastResID, FastResIDGener, ObjID, ResID};
+use crate::id::{FastObjID, FastResID, ObjID, ResID};
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -15,14 +15,6 @@ impl IDTable {
             res_table: HashMap::with_capacity(128),
             obj_table: HashMap::with_capacity(128),
         };
-    }
-
-    fn default_res_gener() -> FastResIDGener {
-        return FastResIDGener::new(u64::MAX);
-    }
-
-    fn default_obj_gener() -> FastObjIDGener {
-        return FastObjIDGener::new(u64::MAX);
     }
 
     pub(crate) fn insert_res_id(&mut self, res_id: &ResID, fres_id: FastResID) -> Result<()> {

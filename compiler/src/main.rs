@@ -1,9 +1,8 @@
 extern crate core;
-extern crate serde_yaml;
 
 use core::resource::ResCache;
+use core::utils::serialize;
 use std::env;
-use std::fs;
 
 fn main() {
     if env::args().len() != 3 {
@@ -15,8 +14,7 @@ fn main() {
 
     let cache = ResCache::compile(&res_file).unwrap();
     let table = cache.id_table();
-    let yaml = serde_yaml::to_string(table).unwrap();
-    fs::write(&id_file, yaml).unwrap();
+    serialize(id_file, table).unwrap();
 
     println!("Compile resource success");
 }

@@ -2,7 +2,7 @@ use super::{approx_zero, fi, Fx, RealExt};
 use na::{ComplexField, Unit, Vector2, Vector3};
 use std::convert::From;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Velocity2 {
     pub speed: Fx,
     pub direction: Unit<Vector2<Fx>>,
@@ -46,7 +46,7 @@ impl Velocity2 {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Velocity3 {
     pub speed: Fx,
     pub direction: Unit<Vector3<Fx>>,
