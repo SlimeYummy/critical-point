@@ -1,6 +1,6 @@
 use crate::core_ex::{RES_CACHE, SYNC_AGENT};
 use anyhow::Result;
-use core::id::{FastObjID, ObjID};
+use core::id::ObjID;
 use core::stage::StateStageGeneral;
 use core::state::StateRef;
 use gdnative::prelude::*;

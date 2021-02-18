@@ -1,6 +1,6 @@
 use crate::core_ex::{RES_CACHE, SYNC_AGENT};
 use anyhow::Result;
-use core::character::StateCharaGeneral;
+use core::character::StateCharaHuman;
 use core::id::ObjID;
 use core::state::StateRef;
 use euclid::Vector3D;
@@ -9,28 +9,28 @@ use gdnative::prelude::*;
 #[derive(NativeClass)]
 #[inherit(Spatial)]
 #[register_with(register_properties)]
-#[user_data(LocalCellData<CharaGeneral>)]
-pub struct CharaGeneral {
+#[user_data(LocalCellData<CharaHuman>)]
+pub struct CharaHuman {
     obj_id: ObjID,
-    state: StateRef<StateCharaGeneral>,
+    state: StateRef<StateCharaHuman>,
     counter: u32,
 }
 
-fn register_properties(builder: &ClassBuilder<CharaGeneral>) {
+fn register_properties(builder: &ClassBuilder<CharaHuman>) {
     builder
         .add_property::<String>("critical_point/obj_id")
         .with_default(ObjID::invalid().into())
-        .with_getter(|app: &CharaGeneral, _| app.obj_id.clone().into())
-        .with_setter(|app: &mut CharaGeneral, _, val: String| app.obj_id = ObjID::from(val))
+        .with_getter(|app: &CharaHuman, _| app.obj_id.clone().into())
+        .with_setter(|app: &mut CharaHuman, _, val: String| app.obj_id = ObjID::from(val))
         .done();
 }
 
 #[methods]
-impl CharaGeneral {
-    fn new(_: &Spatial) -> CharaGeneral {
-        godot_print!("CharaGeneral::new()");
+impl CharaHuman {
+    fn new(_: &Spatial) -> CharaHuman {
+        godot_print!("CharaHuman::new()");
 
-        return CharaGeneral {
+        return CharaHuman {
             obj_id: ObjID::invalid(),
             state: StateRef::invaild(),
             counter: 0,
@@ -39,7 +39,7 @@ impl CharaGeneral {
 
     #[export]
     fn _ready(&mut self, owner: &Spatial) {
-        godot_print!("CharaGeneral::_ready()");
+        godot_print!("CharaHuman::_ready()");
         owner.set_physics_process(true);
 
         let result: Result<()> = try {
@@ -48,7 +48,7 @@ impl CharaGeneral {
             self.state.start(fobj_id, binder)?;
         };
         if let Err(err) = result {
-            godot_error!("CharaGeneral::_ready() => {:?}", err);
+            godot_error!("CharaHuman::_ready() => {:?}", err);
         }
     }
 
@@ -69,7 +69,7 @@ impl CharaGeneral {
             }
         };
         if let Err(err) = result {
-            godot_error!("CharaGeneral::_physics_process() => {:?}", err);
+            godot_error!("CharaHuman::_physics_process() => {:?}", err);
         }
 
         // let state = self.state.state().unwrap();
@@ -121,7 +121,7 @@ impl CharaGeneral {
     // }
 }
 
-// impl CharaGeneral {
+// impl CharaHuman {
 //     pub fn move_character(&mut self, direction: Vector2D<f32, UnknownUnit>) {
 //         let camera_rot: Rotation2<f32> = Rotation2::new(-self.camera_hori); // negative, right-handed
 //         let move_dir: Vector2<f32> = camera_rot * Vector2::new(direction.x, direction.y);

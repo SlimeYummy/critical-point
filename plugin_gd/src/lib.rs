@@ -1,7 +1,9 @@
+#![feature(arbitrary_enum_discriminant)]
 #![feature(try_blocks)]
 
 extern crate anyhow;
 extern crate core;
+extern crate derivative;
 extern crate euclid;
 extern crate gdnative;
 extern crate lazy_static;
@@ -10,6 +12,7 @@ extern crate math as m;
 extern crate nalgebra as na;
 extern crate serde;
 extern crate serde_json;
+extern crate serde_yaml;
 
 mod application;
 mod character;
@@ -18,7 +21,7 @@ mod stage;
 mod utils;
 
 use crate::application::Application;
-use crate::character::CharaGeneral;
+use crate::character::CharaHuman;
 use crate::core_ex::{init_sync_agent, load_res_cache};
 use crate::stage::StageGeneral;
 use gdnative::prelude::*;
@@ -38,7 +41,7 @@ fn init(handle: InitHandle) {
 
     handle.add_class::<Application>();
     handle.add_class::<StageGeneral>();
-    handle.add_class::<CharaGeneral>();
+    handle.add_class::<CharaHuman>();
 }
 
 godot_init!(init);
