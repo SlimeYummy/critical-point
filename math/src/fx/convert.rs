@@ -93,6 +93,9 @@ pub const fn fx_f64(n: f64) -> Fx {
     let expo = ((bits & 0x7FF0_0000_0000_0000) >> 52) as i64 - 1023;
     let base = ((bits & 0x000F_FFFF_FFFF_FFFF) + 0x0010_0000_0000_0000) as i64;
     if expo > 30 {
+        if expo == 1024 && base != 0 {
+            return Fx(I32F32::from_bits(0));
+        }
         if sign >= 0 {
             return Fx(I32F32::MAX);
         } else {
@@ -120,6 +123,9 @@ pub const fn fx_f32(n: f32) -> Fx {
     let expo = ((bits & 0x7F80_0000) >> 23) as i64 - 127;
     let base = ((bits & 0x007F_FFFF) + 0x0080_0000) as i64;
     if expo > 30 {
+        if expo == 128 && base != 0 {
+            return Fx(I32F32::from_bits(0));
+        }
         if sign >= 0 {
             return Fx(I32F32::MAX);
         } else {
@@ -185,6 +191,7 @@ mod tests {
         assert_eq!(fx_f64(-0.98765432), Fx(I32F32::from_num(-0.98765432)));
         assert_eq!(fx_f64(f64::INFINITY), Fx(I32F32::MAX));
         assert_eq!(fx_f64(f64::NEG_INFINITY), Fx(I32F32::MIN));
+        assert_eq!(fx_f64(f64::NAN), Fx(I32F32::from_num(0)));
     }
 
     #[test]
@@ -206,5 +213,6 @@ mod tests {
         assert_eq!(fx_f32(-0.625), Fx(I32F32::from_num(-0.625)));
         assert_eq!(fx_f32(f32::INFINITY), Fx(I32F32::MAX));
         assert_eq!(fx_f32(f32::NEG_INFINITY), Fx(I32F32::MIN));
+        assert_eq!(fx_f32(f32::NAN), Fx(I32F32::from_num(0)));
     }
 }
