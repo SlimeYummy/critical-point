@@ -1,2 +1,0 @@
-godot (https://godotengine.org/)
-bullet (https://github.com/bulletphysics/bullet3)
