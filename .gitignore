@@ -7,3 +7,5 @@
 /target
 *.exe
 *.tpz
+-action
+-logic
