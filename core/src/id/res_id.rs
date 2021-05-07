@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Hash, Serialize, Deserialize)]
 pub struct ResID(String);
 
-impl From<&'static str> for ResID {
-    fn from(text: &'static str) -> ResID {
+impl From<&str> for ResID {
+    fn from(text: &str) -> ResID {
         return ResID(text.to_string());
     }
 }
@@ -102,10 +102,10 @@ impl FastResIDGener {
     }
 
     pub(crate) fn gen(&mut self) -> FastResID {
-        let fobj_id = FastResID(self.counter);
-        if fobj_id.is_valid() {
+        let fres_id = FastResID(self.counter);
+        if fres_id.is_valid() {
             self.counter += 1;
-            return fobj_id;
+            return fres_id;
         } else {
             panic!("FastResID exhausted!");
         }
