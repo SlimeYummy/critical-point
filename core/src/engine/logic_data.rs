@@ -1,33 +1,18 @@
-use super::logic_obj::{LogicObj, RefObj};
-use crate::id::{ClassID, FastObjID};
+use crate::derive::def_enum;
+use crate::id::{ClassID, ObjID};
+use crate::utils;
+use anyhow::{anyhow, Result};
+use std::any::Any;
 use std::ffi::c_void;
-use std::marker::PhantomData;
 use std::mem;
-use std::slice::Iter;
-use derivative::Derivative;
+use std::ptr;
 use std::raw::TraitObject;
 
 //
-// LogicState & LogicProp
+// Lifecycle
 //
 
-pub trait LogicPropStatic {
-    fn id() -> ClassID;
-}
-
-pub trait LogicProp {
-    fn class_id(&self) -> ClassID;
-}
-
-pub trait LogicStateStatic {
-    fn id() -> ClassID;
-}
-
-pub trait LogicState {
-    fn class_id(&self) -> ClassID;
-    fn lifecycle(&self) -> LogicLifecycle;
-}
-
+#[def_enum]
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LogicLifecycle {
@@ -43,208 +28,198 @@ impl Default for LogicLifecycle {
 }
 
 //
-// LogicData
+// LogicProp & LogicState
 //
 
-static mut LOGIC_THREAD_INDEX: usize = 0;
-static mut RENDER_THREAD_INDEX: usize = 1;
-
-// call by logic thread
-pub(crate) unsafe fn update_logic_thread_index() -> usize {
-    LOGIC_THREAD_INDEX = (LOGIC_THREAD_INDEX + 1) % 2;
-    return LOGIC_THREAD_INDEX;
+pub trait LogicPropStatic {
+    fn id() -> ClassID;
 }
 
-// call by render thread
-// logic thread send write_idx to render thread through channel
-pub(crate) unsafe fn update_render_thread_index(logic_idx: usize) -> usize {
-    RENDER_THREAD_INDEX = (logic_idx + 1) % 2;
-    return RENDER_THREAD_INDEX;
+pub trait LogicStateStatic {
+    fn id() -> ClassID;
 }
-
-#[derive(Debug)]
-pub struct LogicData<P, S>
-where
-    P: LogicProp + LogicPropStatic,
-    S: LogicState + LogicStateStatic,
-{
-    prop: P,
-    state: [S; 2],
-}
-
-impl<P, S> !Sync for LogicData<P, S> {}
-impl<P, S> !Send for LogicData<P, S> {}
-
-impl<P, S> LogicData<P, S>
-where
-    P: LogicProp + LogicPropStatic,
-    S: LogicState + LogicStateStatic + Default,
-{
-    pub fn new(prop: P) -> LogicData<P, S> {
-        return LogicData {
-            prop,
-            state: [S::default(), S::default()],
-        };
-    }
-
-    pub fn prop_ptr(&self) -> *const c_void {
-        return &self.prop as *const _ as *const c_void;
-    }
-
-    pub fn state_ptr(&self) -> *const c_void {
-        return &self.state[0] as *const _ as *const c_void;
-    }
-
-    pub fn prop(&mut self) -> &P {
-        return &self.prop;
-    }
-
-    pub fn state(&mut self) -> &S {
-        let idx = unsafe { LOGIC_THREAD_INDEX };
-        return &self.state[idx];
-    }
-
-    pub fn state_mut(&mut self) -> &mut S {
-        let idx = unsafe { LOGIC_THREAD_INDEX };
-        return &mut self.state[idx];
-    }
-}
-
-//
-// RefData
-//
 
 #[repr(C)]
-#[derive(Clone, Derivative)]
-#[derivative(Debug)]
-pub struct RefData<P, S> {
-    #[derivative(Debug = "ignore")]
-    obj: RefObj<dyn LogicObj>,
+#[derive(Debug)]
+pub struct LogicProp<P> {
+    obj_id: ObjID,
     class_id: ClassID,
-    fobj_id: FastObjID,
-    prop: *const c_void,
-    state: *const c_void,
-    phantom: PhantomData<(P, S)>,
+    vtable: *mut u8,
+    _padding_: [u8; 8], // for 16bit align
+    prop: P,
 }
 
-impl<P, S> !Sync for RefData<P, S> {}
-impl<P, S> !Send for RefData<P, S> {}
-
-impl<P, S> RefData<P, S> {
-    pub fn class_id(&self) -> ClassID {
-        return self.class_id;
-    }
-
-    pub fn fobj_id(&self) -> FastObjID {
-        return self.fobj_id;
-    }
-
-    pub fn is_valid(&self) -> bool {
-        let to: TraitObject = unsafe { mem::transmute_copy(&self.obj) };
-        return !to.vtable.is_null() && !to.data.is_null();
-    }
-
-    pub fn is_invalid(&self) -> bool {
-        return !self.is_valid();
-    }
+#[repr(C)]
+#[derive(Debug)]
+pub struct LogicState<S> {
+    obj_id: ObjID,
+    class_id: ClassID,
+    lifecycle: LogicLifecycle,
+    vtable: *mut u8,
+    _padding_: [u8; 8], // for 16bit align
+    state: S,
 }
 
-impl RefData<(), ()> {
-    #[inline]
-    pub(crate) fn new<O>(obj: &RefObj<O>) -> RefData<(), ()>
-    where
-        O: LogicObj + 'static,
-    {
-        return RefData {
-            obj: obj.clone(),
-            class_id: obj.borrow().class_id(),
-            fobj_id: obj.borrow().fobj_id(),
-            prop: obj.borrow().prop_ptr(),
-            state: obj.borrow().state_ptr(),
-            phantom: PhantomData,
+//
+// Data Pool
+//
+
+#[derive(Debug)]
+pub struct DataPool {
+    props: Vec<*mut LogicProp<()>>,
+    states: Vec<*mut LogicState<()>>,
+    chunk_size: usize,
+    threshold_size: usize,
+    chunks: Vec<MemoryChunk>,
+}
+
+unsafe impl Sync for DataPool {}
+unsafe impl Send for DataPool {}
+
+impl DataPool {
+    pub fn new(chunk_size: usize) -> DataPool {
+        let mut pool = DataPool {
+            props: Vec::with_capacity(256),
+            states: Vec::with_capacity(1024),
+            chunk_size,
+            threshold_size: chunk_size / 8,
+            chunks: Vec::with_capacity(64),
         };
+        pool.chunks.push(MemoryChunk::new(chunk_size));
+        return pool;
     }
 
-    #[inline]
-    pub fn is<P, S>(&self) -> bool
+    pub fn prop<P>(&mut self, obj_id: ObjID, prop: P) -> Result<&mut LogicProp<P>>
     where
-        P: LogicProp + LogicPropStatic,
-        S: LogicState + LogicStateStatic,
+        P: LogicPropStatic + 'static,
     {
-        return self.class_id == P::id() && self.class_id == S::id();
+        let size = (mem::size_of::<LogicProp<P>>() + 15) & !15;
+        let ptr = self.alloc(size)?;
+        unsafe {
+            ptr::write(
+                ptr as *mut LogicProp<P>,
+                LogicProp {
+                    obj_id,
+                    class_id: P::id(),
+                    vtable: utils::any_vtable::<P>(),
+                    _padding_: [0u8; 8],
+                    prop,
+                },
+            );
+        };
+        self.props.push(ptr as *mut LogicProp<()>);
+        return Ok(unsafe { &mut *(ptr as *mut LogicProp<P>) });
     }
 
-    #[inline]
-    pub fn cast<P, S>(self) -> Option<RefData<P, S>>
+    pub fn state<S>(
+        &mut self,
+        obj_id: ObjID,
+        lifecycle: LogicLifecycle,
+        state: S,
+    ) -> Result<&mut LogicState<S>>
     where
-        P: LogicProp + LogicPropStatic,
-        S: LogicState + LogicStateStatic,
+        S: LogicStateStatic + 'static,
     {
-        if self.class_id == P::id() && self.class_id == S::id() {
-            return Some(RefData {
-                obj: self.obj,
-                class_id: self.class_id,
-                fobj_id: self.fobj_id,
-                prop: self.prop,
-                state: self.state,
-                phantom: PhantomData,
-            });
-        } else {
-            return None;
+        let size = (mem::size_of::<LogicProp<S>>() + 15) & !15;
+        let ptr = self.alloc(size)?;
+        unsafe {
+            ptr::write(
+                ptr as *mut LogicState<S>,
+                LogicState {
+                    obj_id,
+                    class_id: S::id(),
+                    lifecycle: lifecycle,
+                    vtable: utils::any_vtable::<S>(),
+                    _padding_: [0u8; 8],
+                    state,
+                },
+            );
+        };
+        self.states.push(ptr as *mut LogicState<()>);
+        return Ok(unsafe { &mut *(ptr as *mut LogicState<S>) });
+    }
+
+    fn alloc(&mut self, size: usize) -> Result<*mut u8> {
+        if size > self.threshold_size {
+            return Err(anyhow!("DataPool::alloc() => memory too large"));
+        }
+
+        let ptr = self.chunks.last_mut().unwrap().alloc(size);
+        if !ptr.is_null() {
+            return Ok(ptr);
+        }
+
+        self.chunks.push(MemoryChunk::new(self.chunk_size));
+        let ptr = self.chunks.last_mut().unwrap().alloc(size);
+        if !ptr.is_null() {
+            return Ok(ptr);
+        }
+
+        return Err(anyhow!("DataPool::alloc() => unexcepted error"));
+    }
+}
+
+impl Drop for DataPool {
+    fn drop(&mut self) {
+        let props = mem::replace(&mut self.props, Vec::new());
+        for prop in props {
+            unsafe {
+                let prop = &mut *prop;
+                let to: &mut dyn Any = mem::transmute(TraitObject {
+                    data: &mut prop.prop as *mut (),
+                    vtable: prop.vtable as *mut (),
+                });
+                ptr::drop_in_place(to);
+            };
+        }
+
+        let states = mem::replace(&mut self.states, Vec::new());
+        for state in states {
+            unsafe {
+                let state = &mut *state;
+                let to: &mut dyn Any = mem::transmute(TraitObject {
+                    data: &mut state.state as *mut (),
+                    vtable: state.vtable as *mut (),
+                });
+                ptr::drop_in_place(to);
+            };
         }
     }
 }
 
-impl<P, S> RefData<P, S>
-where
-    P: LogicProp + LogicPropStatic,
-    S: LogicState + LogicStateStatic,
-{
-    #[inline]
-    fn prop(&self) -> &P {
-        return unsafe { &*(self.prop as *const P) };
+#[derive(Debug)]
+struct MemoryChunk {
+    size: usize,
+    offset: usize,
+    buffer: *mut u8,
+}
+
+impl MemoryChunk {
+    fn new(size: usize) -> MemoryChunk {
+        return MemoryChunk {
+            size: size,
+            offset: 0,
+            buffer: unsafe { libc::malloc(size) as *mut u8 },
+        };
     }
 
-    #[inline]
-    fn state(&self) -> &S {
-        unsafe {
-            let offset = RENDER_THREAD_INDEX as isize;
-            return &*(self.state.offset(offset) as *const S);
-        };
+    fn alloc(&mut self, size: usize) -> *mut u8 {
+        if size > self.size - self.offset {
+            return ptr::null_mut();
+        }
+        let ptr = unsafe { self.buffer.offset(self.offset as isize) };
+        self.offset += size;
+        return ptr as *mut u8;
     }
 }
 
-//
-// RefDataPool
-//
-
-pub struct RefDataPool(Vec<RefData<(), ()>>);
-
-unsafe impl Sync for RefDataPool {}
-unsafe impl Send for RefDataPool {}
-
-impl RefDataPool {
-    pub fn new() -> RefDataPool {
-        return RefDataPool(Vec::new());
-    }
-
-    pub fn with_capacity(size: usize) -> RefDataPool {
-        return RefDataPool(Vec::with_capacity(size));
-    }
-
-    pub fn push(&mut self, state: RefData<(), ()>) {
-        return self.0.push(state);
-    }
-
-    pub fn len(&self) -> usize {
-        return self.0.len();
-    }
-
-    pub fn iter(&self) -> Iter<'_, RefData<(), ()>> {
-        return self.0.iter();
-    }
-
-    pub fn to_vec(self) -> Vec<RefData<(), ()>> {
-        return self.0;
+impl Drop for MemoryChunk {
+    fn drop(&mut self) {
+        if !self.buffer.is_null() {
+            unsafe { libc::free(self.buffer as *mut c_void) }
+            self.buffer = ptr::null_mut();
+        }
+        self.size = 0;
+        self.offset = 0;
     }
 }
