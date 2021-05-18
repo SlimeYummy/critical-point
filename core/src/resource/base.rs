@@ -1,8 +1,6 @@
 use super::cache::{CompileContext, RestoreContext};
 use crate::id::{ClassID, FastResID, ResID};
 use anyhow::{anyhow, Result};
-pub(crate) use derive::ResObjX;
-use m::Fx;
 use serde::{Deserialize, Serialize};
 use std::mem;
 use std::raw::TraitObject;

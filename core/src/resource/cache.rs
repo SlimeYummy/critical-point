@@ -2,10 +2,9 @@
 use super::base::ResObj;
 use super::id_table::IDTable;
 use super::shape::{ShapeCacheKey, ShapeCacheValue};
-use crate::id::{FastObjID, FastObjIDGener, FastResID, FastResIDGener, ObjID, ResID};
+use crate::id::{FastResID, FastResIDGener, ResID};
 use crate::utils::deserialize;
 use anyhow::{anyhow, Context, Result};
-use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -32,6 +31,7 @@ enum CacheStatus {
 
 pub struct ResCache {
     status: CacheStatus,
+    root_path: PathBuf,
     file_pathes: HashSet<PathBuf>,
     id_table: IDTable,
     res_cache: HashMap<ResID, Arc<dyn ResObj>>,
@@ -42,6 +42,7 @@ pub struct ResCache {
 impl ResCache {
     pub(crate) fn new() -> ResCache {
         return ResCache {
+            root_path: PathBuf::new(),
             status: CacheStatus::Unknown,
             file_pathes: HashSet::new(),
             id_table: IDTable::new(),
@@ -51,12 +52,12 @@ impl ResCache {
         };
     }
 
-    pub fn compile(res_file: &str) -> Result<Arc<ResCache>> {
+    pub fn compile(root_path: &str, res_file: &str) -> Result<Arc<ResCache>> {
         let mut cache = ResCache::new();
         cache.status = CacheStatus::Compiling;
+        cache.root_path = PathBuf::from(root_path);
 
-        let res_path = PathBuf::from(res_file).canonicalize()?;
-        cache.load_res_objs(res_path)?;
+        cache.load_res_objs(res_file)?;
 
         cache.compile_res_objs()?;
         cache.status = CacheStatus::Compiled;
@@ -64,26 +65,30 @@ impl ResCache {
         return Ok(Arc::new(cache));
     }
 
-    pub fn restore(res_file: &str, id_file: &str) -> Result<Arc<ResCache>> {
+    pub fn restore(root_path: &str, res_file: &str, id_file: &str) -> Result<Arc<ResCache>> {
         let mut cache = ResCache::new();
         cache.status = CacheStatus::Restoring;
-        cache.id_table = deserialize(&PathBuf::from(id_file))?;
+        cache.root_path = PathBuf::from(root_path);
 
-        let res_path = PathBuf::from(res_file).canonicalize()?;
-        cache.load_res_objs(res_path)?;
+        let id_path = cache.get_res_path(id_file)?;
+        cache.id_table = deserialize(&id_path)?;
+        cache.load_res_objs(res_file)?;
 
-        cache.restore_res_objs()?;
+        let res = cache.restore_res_objs();
+        res?;
         cache.status = CacheStatus::Restored;
 
         return Ok(Arc::new(cache));
     }
 
-    fn load_res_objs(&mut self, res_path: PathBuf) -> Result<()> {
-        if self.file_pathes.contains(&res_path) {
+    fn load_res_objs(&mut self, res_file: &str) -> Result<()> {
+        let get_res_path = self.get_res_path(res_file)?;
+        if self.file_pathes.contains(&get_res_path) {
             return Ok(());
         }
-        let res_file: ResFile = deserialize(&res_path).context(format!("file {:?}", res_path))?;
-        self.file_pathes.insert(res_path.clone());
+        let res_file: ResFile =
+            deserialize(&get_res_path).context(format!("file {:?}", get_res_path))?;
+        self.file_pathes.insert(get_res_path.clone());
 
         for res in &res_file.resource {
             let res_id = res.res_id().clone();
@@ -94,8 +99,7 @@ impl ResCache {
         }
 
         for inc_file in &res_file.include {
-            let inc_path = Self::offset_path(&res_path, inc_file)?;
-            self.load_res_objs(inc_path)?;
+            self.load_res_objs(inc_file)?;
         }
         return Ok(());
     }
@@ -105,7 +109,6 @@ impl ResCache {
         let mut ctx = CompileContext {
             cache: self,
             res_gener: FastResIDGener::new(1),
-            obj_gener: FastObjIDGener::new(1),
         };
         for (_, res) in &mut res_cache {
             unsafe { Arc::get_mut_unchecked(res).compile(&mut ctx) }?;
@@ -128,12 +131,10 @@ impl ResCache {
         return Ok(());
     }
 
-    fn offset_path(path: &PathBuf, sub_path: &str) -> Result<PathBuf> {
-        let mut res_path = path.clone();
-        res_path.pop();
-        res_path.push(sub_path);
-        res_path = res_path.canonicalize()?;
-        return Ok(res_path);
+    fn get_res_path(&self, file: &str) -> Result<PathBuf> {
+        let mut path = self.root_path.clone();
+        path.push(file);
+        return Ok(path.canonicalize()?);
     }
 }
 
@@ -146,11 +147,6 @@ impl ResCache {
     #[inline]
     pub fn get_fres_id(&self, res_id: &ResID) -> Result<FastResID> {
         return self.id_table.get_fres_id(res_id);
-    }
-
-    #[inline]
-    pub fn get_fobj_id(&self, obj_id: &ObjID) -> Result<FastObjID> {
-        return self.id_table.get_fobj_id(obj_id);
     }
 
     #[inline]
@@ -173,7 +169,6 @@ impl ResCache {
 pub struct CompileContext<'t> {
     cache: &'t mut ResCache,
     res_gener: FastResIDGener,
-    obj_gener: FastObjIDGener,
 }
 
 impl<'t> CompileContext<'t> {
@@ -186,16 +181,6 @@ impl<'t> CompileContext<'t> {
             .id_table
             .insert_res_id(res_id, self.res_gener.gen());
     }
-
-    pub(crate) fn insert_obj_id(&mut self, obj_id: &ObjID) -> Result<()> {
-        if self.cache.status != CacheStatus::Compiling {
-            return Err(anyhow!("Not in compiling status"));
-        }
-        return self
-            .cache
-            .id_table
-            .insert_obj_id(obj_id, self.obj_gener.gen());
-    }
 }
 
 pub struct RestoreContext<'t> {
@@ -204,18 +189,19 @@ pub struct RestoreContext<'t> {
 
 #[allow(dead_code)]
 impl<'t> RestoreContext<'t> {
+    pub(crate) fn root_path(&self) -> &PathBuf {
+        return &self.cache.root_path;
+    }
+
+    pub(crate) fn get_res_path(&self, file: &str) -> Result<PathBuf> {
+        return self.cache.get_res_path(file);
+    }
+
     pub(crate) fn get_fres_id(&self, res_id: &ResID) -> Result<FastResID> {
         if self.cache.status != CacheStatus::Restoring {
             return Err(anyhow!("Not in restoring status"));
         }
         return self.cache.id_table.get_fres_id(res_id);
-    }
-
-    pub(crate) fn get_fobj_id(&self, obj_id: &ObjID) -> Result<FastObjID> {
-        if self.cache.status != CacheStatus::Restoring {
-            return Err(anyhow!("Not in restoring status"));
-        }
-        return self.cache.id_table.get_fobj_id(obj_id);
     }
 
     pub(crate) fn find_res<R: ResObj>(&self, res_id: &ResID) -> Result<Arc<R>> {
@@ -280,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_res_cache_compile() {
-        let cache = ResCache::compile("../test_files/resource/resource.yaml").unwrap();
+        let cache = ResCache::compile("../test_files/resource", "resource.yaml").unwrap();
         assert_eq!(cache.res_cache.len(), 3);
         assert_eq!(cache.fres_cache.len(), 0);
 
@@ -319,11 +305,8 @@ mod tests {
 
     #[test]
     fn test_res_cache_restore() {
-        let cache = ResCache::restore(
-            "../test_files/resource/resource.yaml",
-            "../test_files/resource/id.yml",
-        )
-        .unwrap();
+        let cache =
+            ResCache::restore("../test_files/resource/", "resource.yaml", "id.yml").unwrap();
         assert_eq!(cache.res_cache.len(), 3);
         assert_eq!(cache.fres_cache.len(), 3);
 
