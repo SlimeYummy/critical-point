@@ -1,23 +1,20 @@
 // use super::action::ResAction;
-use super::base::{ResObj, ResObjX};
+use super::base::ResObj;
 use super::cache::{CompileContext, RestoreContext};
-use super::serde_helper;
 use super::shape::ResShape;
-use crate::id::{FastResID, ResID};
+use crate::derive::def_res;
+use crate::id::{ClassID, FastResID, ResID};
 use anyhow::Result;
 use m::Fx;
-use na::Isometry3;
 use serde::{Deserialize, Serialize};
 
-#[derive(ResObjX, Debug, Clone, Serialize, Deserialize)]
-#[class_id(CharaHuman)]
+#[def_res(ClassID::CharaHuman)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResCharaHuman {
     pub res_id: ResID,
     #[serde(skip)]
     pub fres_id: FastResID,
     pub collision: ResShape,
-    #[serde(with = "serde_helper::isometry")]
-    pub position: Isometry3<Fx>,
     pub max_health: i32,
     pub max_energy: i32,
     pub max_posture: i32,

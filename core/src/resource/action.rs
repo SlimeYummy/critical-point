@@ -1,21 +1,21 @@
-use super::base::{ResLerpFunction, ResLerpParameter};
-use m::{fi, Fx};
-use nalgebra::{UnitComplex, Vector3, Vector2};
-use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
-use super::base::{ResObj, ResObjX};
+use super::base::ResObj;
 use super::cache::{CompileContext, RestoreContext};
-use crate::id::{FastObjID, ObjID, FastResID, ResID};
+use crate::derive::def_res;
+use crate::id::{ClassID, FastResID, ResID};
 use anyhow::Result;
 use lazy_static::lazy_static;
+use m::Fx;
+use nalgebra::Vector2;
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use std::sync::Arc;
 
 lazy_static! {
     static ref DEFAULT_ACTION: Arc<ResAction> = Arc::new(ResAction::default());
 }
 
-#[derive(ResObjX, Debug, Default, Clone, Serialize, Deserialize)]
-#[class_id(Action)]
+#[def_res(ClassID::Action)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ResAction {
     pub res_id: ResID,
     #[serde(skip)]
@@ -38,15 +38,11 @@ impl ResObj for ResAction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum ResActionAny {
-}
+pub enum ResActionAny {}
 
 pub struct ActRun {
     pub direction: Vector2<Fx>,
 }
-
-
-
 
 // #[derive(Clone, Debug, Deserialize, Serialize)]
 // pub struct ResAction {
