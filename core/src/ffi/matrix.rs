@@ -1,4 +1,4 @@
-use m::{fx_f32, Fx};
+use math::{fx_f32, Fx};
 use na::{Matrix2, Matrix3, Matrix4, Rotation2, Rotation3};
 
 #[repr(C)]
