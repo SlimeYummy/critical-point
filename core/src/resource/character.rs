@@ -5,7 +5,7 @@ use super::shape::ResShape;
 use crate::derive::def_res;
 use crate::id::{ClassID, FastResID, ResID};
 use anyhow::Result;
-use m::Fx;
+use math::Fx;
 use serde::{Deserialize, Serialize};
 
 #[def_res(ClassID::CharaHuman)]
@@ -46,7 +46,7 @@ mod tests {
     // use super::*;
     // use super::resource::ResBall;
     // use approx::relative_eq;
-    // use m::fi;
+    // use math::fi;
 
     // #[test]
     // fn test_res_character() {

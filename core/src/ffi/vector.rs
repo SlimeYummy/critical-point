@@ -1,4 +1,4 @@
-use m::{fx_f32, fx_i32, Fx};
+use math::{fx_f32, fx_i32, Fx};
 use na::{Translation3, Vector2, Vector3, Vector4};
 
 #[repr(C)]

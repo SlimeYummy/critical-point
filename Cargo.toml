@@ -2,7 +2,8 @@
 members = [
     "derive",
     "math",
+    "collide",
     "core",
     "compiler",
-    "plugin_gd",
+    "plugin_u3d",
 ]

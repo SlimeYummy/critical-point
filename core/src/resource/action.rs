@@ -4,7 +4,7 @@ use crate::derive::def_res;
 use crate::id::{ClassID, FastResID, ResID};
 use anyhow::Result;
 use lazy_static::lazy_static;
-use m::Fx;
+use math::Fx;
 use nalgebra::Vector2;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;

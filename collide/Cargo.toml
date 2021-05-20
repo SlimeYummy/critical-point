@@ -1,0 +1,11 @@
+[package]
+name = "collide"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+derivative = "2.2.0"
+math = { path = "../math" }
+nalgebra = "0.26.2"
+ncollide3d = "0.29.0"
+slab = "0.4.3"
