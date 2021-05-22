@@ -1,9 +1,11 @@
+use super::collision_groups::CollisionGroups;
 use crate::pipeline::broad_phase::BroadPhaseProxyHandle;
 use math::Fx;
 use ncollide3d::math::Isometry;
 use ncollide3d::pipeline::narrow_phase::CollisionObjectGraphIndex;
 use ncollide3d::pipeline::{
-    CollisionGroups, CollisionObjectRef, CollisionObjectUpdateFlags, GeometricQueryType,
+    CollisionGroups as NcCollisionGroups, CollisionObjectRef, CollisionObjectUpdateFlags,
+    GeometricQueryType,
 };
 use ncollide3d::shape::{Shape, ShapeHandle};
 
@@ -184,8 +186,8 @@ impl<T> CollisionObjectRef<Fx> for CollisionObject<T> {
         return self.shape().as_ref();
     }
 
-    fn collision_groups(&self) -> &CollisionGroups {
-        return self.collision_groups();
+    fn collision_groups(&self) -> &NcCollisionGroups {
+        unimplemented!()
     }
 
     fn query_type(&self) -> GeometricQueryType<Fx> {
