@@ -1,17 +1,17 @@
 use na::{Isometry3, Point3, RealField, Unit, Vector3};
 use ncollide3d::bounding_volume::{self, BoundingSphere, HasBoundingVolume, AABB};
 use ncollide3d::query::{PointProjection, PointQuery, Ray, RayCast, RayIntersection};
-use ncollide3d::shape::{Cone, FeatureId, Shape, SupportMap};
+use ncollide3d::shape::{Cone as NcCone, FeatureId, Shape, SupportMap};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ConeExt<N> {
-    cone: Cone<N>,
+pub struct Cone<N> {
+    cone: NcCone<N>,
 }
 
-impl<N: RealField> ConeExt<N> {
-    pub fn new(half_height: N, radius: N) -> ConeExt<N> {
-        return ConeExt {
-            cone: Cone::new(half_height, radius),
+impl<N: RealField> Cone<N> {
+    pub fn new(half_height: N, radius: N) -> Cone<N> {
+        return Cone {
+            cone: NcCone::new(half_height, radius),
         };
     }
 
@@ -26,13 +26,13 @@ impl<N: RealField> ConeExt<N> {
     }
 }
 
-impl<N: RealField> SupportMap<N> for ConeExt<N> {
+impl<N: RealField> SupportMap<N> for Cone<N> {
     fn local_support_point(&self, dir: &Vector3<N>) -> Point3<N> {
         return self.cone.local_support_point(dir);
     }
 }
 
-impl<N: RealField> HasBoundingVolume<N, AABB<N>> for ConeExt<N> {
+impl<N: RealField> HasBoundingVolume<N, AABB<N>> for Cone<N> {
     #[inline]
     fn bounding_volume(&self, transform: &Isometry3<N>) -> AABB<N> {
         return self.cone.bounding_volume(transform);
@@ -44,7 +44,7 @@ impl<N: RealField> HasBoundingVolume<N, AABB<N>> for ConeExt<N> {
     }
 }
 
-impl<N: RealField> HasBoundingVolume<N, BoundingSphere<N>> for ConeExt<N> {
+impl<N: RealField> HasBoundingVolume<N, BoundingSphere<N>> for Cone<N> {
     #[inline]
     fn bounding_volume(&self, transform: &Isometry3<N>) -> BoundingSphere<N> {
         return self.cone.bounding_volume(transform);
@@ -56,7 +56,7 @@ impl<N: RealField> HasBoundingVolume<N, BoundingSphere<N>> for ConeExt<N> {
     }
 }
 
-impl<N: RealField> RayCast<N> for ConeExt<N> {
+impl<N: RealField> RayCast<N> for Cone<N> {
     fn toi_and_normal_with_ray(
         &self,
         transform: &Isometry3<N>,
@@ -70,7 +70,7 @@ impl<N: RealField> RayCast<N> for ConeExt<N> {
     }
 }
 
-impl<N: RealField> PointQuery<N> for ConeExt<N> {
+impl<N: RealField> PointQuery<N> for Cone<N> {
     #[inline]
     fn project_point(
         &self,
@@ -91,7 +91,7 @@ impl<N: RealField> PointQuery<N> for ConeExt<N> {
     }
 }
 
-impl<N: RealField> Shape<N> for ConeExt<N> {
+impl<N: RealField> Shape<N> for Cone<N> {
     #[inline]
     fn aabb(&self, transform: &Isometry3<N>) -> AABB<N> {
         return bounding_volume::aabb(self, transform);
