@@ -1,17 +1,17 @@
 use na::{Isometry3, Point3, RealField, Unit, Vector3};
 use ncollide3d::bounding_volume::{self, BoundingSphere, HasBoundingVolume, AABB};
 use ncollide3d::query::{PointProjection, PointQuery, Ray, RayCast, RayIntersection};
-use ncollide3d::shape::{Cylinder, FeatureId, Shape, SupportMap};
+use ncollide3d::shape::{Cylinder as NcCylinder, FeatureId, Shape, SupportMap};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct CylinderExt<N> {
-    cylinder: Cylinder<N>,
+pub struct Cylinder<N> {
+    cylinder: NcCylinder<N>,
 }
 
-impl<N: RealField> CylinderExt<N> {
-    pub fn new(half_height: N, radius: N) -> CylinderExt<N> {
-        return CylinderExt {
-            cylinder: Cylinder::new(half_height, radius),
+impl<N: RealField> Cylinder<N> {
+    pub fn new(half_height: N, radius: N) -> Cylinder<N> {
+        return Cylinder {
+            cylinder: NcCylinder::new(half_height, radius),
         };
     }
 
@@ -26,13 +26,13 @@ impl<N: RealField> CylinderExt<N> {
     }
 }
 
-impl<N: RealField> SupportMap<N> for CylinderExt<N> {
+impl<N: RealField> SupportMap<N> for Cylinder<N> {
     fn local_support_point(&self, dir: &Vector3<N>) -> Point3<N> {
         return self.cylinder.local_support_point(dir);
     }
 }
 
-impl<N: RealField> HasBoundingVolume<N, AABB<N>> for CylinderExt<N> {
+impl<N: RealField> HasBoundingVolume<N, AABB<N>> for Cylinder<N> {
     #[inline]
     fn bounding_volume(&self, transform: &Isometry3<N>) -> AABB<N> {
         return self.cylinder.bounding_volume(transform);
@@ -44,7 +44,7 @@ impl<N: RealField> HasBoundingVolume<N, AABB<N>> for CylinderExt<N> {
     }
 }
 
-impl<N: RealField> HasBoundingVolume<N, BoundingSphere<N>> for CylinderExt<N> {
+impl<N: RealField> HasBoundingVolume<N, BoundingSphere<N>> for Cylinder<N> {
     #[inline]
     fn bounding_volume(&self, transform: &Isometry3<N>) -> BoundingSphere<N> {
         return self.cylinder.bounding_volume(transform);
@@ -56,7 +56,7 @@ impl<N: RealField> HasBoundingVolume<N, BoundingSphere<N>> for CylinderExt<N> {
     }
 }
 
-impl<N: RealField> RayCast<N> for CylinderExt<N> {
+impl<N: RealField> RayCast<N> for Cylinder<N> {
     fn toi_and_normal_with_ray(
         &self,
         transform: &Isometry3<N>,
@@ -70,7 +70,7 @@ impl<N: RealField> RayCast<N> for CylinderExt<N> {
     }
 }
 
-impl<N: RealField> PointQuery<N> for CylinderExt<N> {
+impl<N: RealField> PointQuery<N> for Cylinder<N> {
     #[inline]
     fn project_point(
         &self,
@@ -91,7 +91,7 @@ impl<N: RealField> PointQuery<N> for CylinderExt<N> {
     }
 }
 
-impl<N: RealField> Shape<N> for CylinderExt<N> {
+impl<N: RealField> Shape<N> for Cylinder<N> {
     #[inline]
     fn aabb(&self, transform: &Isometry3<N>) -> AABB<N> {
         return bounding_volume::aabb(self, transform);

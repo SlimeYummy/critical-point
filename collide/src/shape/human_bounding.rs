@@ -1,5 +1,4 @@
-use crate::auto_gen::RealExt;
-use derivative::Derivative;
+use math::RealExt;
 use na::{Isometry3, Point3, RealField, Unit, Vector3};
 use ncollide3d::bounding_volume::{self, BoundingSphere, HasBoundingVolume, AABB};
 use ncollide3d::query::{
