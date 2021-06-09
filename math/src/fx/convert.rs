@@ -81,6 +81,11 @@ pub const fn fx_u8(n: u8) -> Fx {
     return Fx(I32F32::from_bits((n as i64) << 32));
 }
 
+#[inline(always)]
+pub const fn fx_bool(n: bool) -> Fx {
+    return Fx(I32F32::from_bits((n as i64) << 32));
+}
+
 union F64Union {
     f: f64,
     i: u64,

@@ -1,6 +1,9 @@
 import math
 
 table = [
+    ("pi", math.pi),
+    ("e", math.e),
+    ("tau", math.tau),
     ("c0", 0.0),
     ("c1", 1.0),
     ("c2", 2.0),
@@ -13,12 +16,14 @@ table = [
     ("frac4", 0.25),
     ("frac5", 0.2),
     ("frac10", 0.1),
+    ("frac_pi", 1 / math.pi),
+    ("frac_e", 1 / math.e),
     ("sqrt2", math.sqrt(2.0)),
     ("sqrt3", math.sqrt(3.0)),
     ("sqrt5", math.sqrt(5.0)),
     ("sqrt10", math.sqrt(10.0)),
-    ("frac_180_pi", math.pi / 180.0),
-    ("frac_pi_180", 180.0 / math.pi),
+    ("frac_180_pi", 180.0 / math.pi),
+    ("frac_pi_180", math.pi / 180.0),
     ("sin0", 0.0),
     ("sin15", math.sin(math.pi / 12.0)),
     ("sin30", math.sin(math.pi / 6.0)),
@@ -40,11 +45,10 @@ table = [
     ("tan60", math.tan(math.pi / 3.0)),
     ("tan75", math.tan(math.pi / 12.0 * 5.0)),
     ("tan90", math.inf),
+    ("max_value", math.inf),
+    ("min_value", -math.inf),
 ]
 
-REAL_HEADER = '''
-
-'''
 
 def auto_gen_real_ext():
     with open(__file__ + "/../real_ext.rs", "w") as file:
@@ -75,25 +79,36 @@ def auto_gen_real_ext():
             "",
         ]))
 
+
 def real_ext_trait(fn):
-    return  "    fn %s() -> Self;" % fn
+    return "    fn %s() -> Self;" % fn
+
 
 def real_ext_fx(fn, val):
     if val == math.inf:
         return "    #[inline(always)] fn %s() -> Self { ff(f64::INFINITY) }" % fn
+    elif val == -math.inf:
+        return "    #[inline(always)] fn %s() -> Self { ff(-f64::INFINITY) }" % fn
     else:
-        return  "    #[inline(always)] fn %s() -> Self { ff(%5.16f) }" % (fn, val)
+        return "    #[inline(always)] fn %s() -> Self { ff(%5.16f) }" % (fn, val)
+
 
 def real_ext_f64(fn, val):
     if val == math.inf:
         return "    #[inline(always)] fn %s() -> Self { f64::INFINITY }" % fn
+    elif val == -math.inf:
+        return "    #[inline(always)] fn %s() -> Self { -f64::INFINITY }" % fn
     else:
-        return  "    #[inline(always)] fn %s() -> Self { %5.16f }" % (fn, val)
+        return "    #[inline(always)] fn %s() -> Self { %5.16f }" % (fn, val)
+
 
 def real_ext_f32(fn, val):
     if val == math.inf:
         return "    #[inline(always)] fn %s() -> Self { f32::INFINITY }" % fn
+    if val == -math.inf:
+        return "    #[inline(always)] fn %s() -> Self { -f32::INFINITY }" % fn
     else:
-        return  "    #[inline(always)] fn %s() -> Self { %5.16f }" % (fn, val)
+        return "    #[inline(always)] fn %s() -> Self { %5.16f }" % (fn, val)
+
 
 auto_gen_real_ext()

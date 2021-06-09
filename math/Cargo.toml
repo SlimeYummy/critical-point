@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 approx = "0.4.0"
-cordic = { "path" = "../../dev/cordic/cordic" }
+cordic = "0.1.5"
 derivative = "2.2.0"
 fixed = { version = "1.9.0", features = [ "serde" ] }
 nalgebra = "0.26.2"
