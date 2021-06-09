@@ -7,6 +7,9 @@
 use crate::fx::{ff, Fx};
 
 pub trait RealExt {
+    fn pi() -> Self;
+    fn e() -> Self;
+    fn tau() -> Self;
     fn c0() -> Self;
     fn c1() -> Self;
     fn c2() -> Self;
@@ -19,6 +22,8 @@ pub trait RealExt {
     fn frac4() -> Self;
     fn frac5() -> Self;
     fn frac10() -> Self;
+    fn frac_pi() -> Self;
+    fn frac_e() -> Self;
     fn sqrt2() -> Self;
     fn sqrt3() -> Self;
     fn sqrt5() -> Self;
@@ -46,9 +51,14 @@ pub trait RealExt {
     fn tan60() -> Self;
     fn tan75() -> Self;
     fn tan90() -> Self;
+    fn max_value() -> Self;
+    fn min_value() -> Self;
 }
 
 impl RealExt for Fx {
+    #[inline(always)] fn pi() -> Self { ff(3.1415926535897931) }
+    #[inline(always)] fn e() -> Self { ff(2.7182818284590451) }
+    #[inline(always)] fn tau() -> Self { ff(6.2831853071795862) }
     #[inline(always)] fn c0() -> Self { ff(0.0000000000000000) }
     #[inline(always)] fn c1() -> Self { ff(1.0000000000000000) }
     #[inline(always)] fn c2() -> Self { ff(2.0000000000000000) }
@@ -61,12 +71,14 @@ impl RealExt for Fx {
     #[inline(always)] fn frac4() -> Self { ff(0.2500000000000000) }
     #[inline(always)] fn frac5() -> Self { ff(0.2000000000000000) }
     #[inline(always)] fn frac10() -> Self { ff(0.1000000000000000) }
+    #[inline(always)] fn frac_pi() -> Self { ff(0.3183098861837907) }
+    #[inline(always)] fn frac_e() -> Self { ff(0.3678794411714423) }
     #[inline(always)] fn sqrt2() -> Self { ff(1.4142135623730951) }
     #[inline(always)] fn sqrt3() -> Self { ff(1.7320508075688772) }
     #[inline(always)] fn sqrt5() -> Self { ff(2.2360679774997898) }
     #[inline(always)] fn sqrt10() -> Self { ff(3.1622776601683795) }
-    #[inline(always)] fn frac_180_pi() -> Self { ff(0.0174532925199433) }
-    #[inline(always)] fn frac_pi_180() -> Self { ff(57.2957795130823229) }
+    #[inline(always)] fn frac_180_pi() -> Self { ff(57.2957795130823229) }
+    #[inline(always)] fn frac_pi_180() -> Self { ff(0.0174532925199433) }
     #[inline(always)] fn sin0() -> Self { ff(0.0000000000000000) }
     #[inline(always)] fn sin15() -> Self { ff(0.2588190451025207) }
     #[inline(always)] fn sin30() -> Self { ff(0.4999999999999999) }
@@ -88,9 +100,14 @@ impl RealExt for Fx {
     #[inline(always)] fn tan60() -> Self { ff(1.7320508075688767) }
     #[inline(always)] fn tan75() -> Self { ff(3.7320508075688745) }
     #[inline(always)] fn tan90() -> Self { ff(f64::INFINITY) }
+    #[inline(always)] fn max_value() -> Self { ff(f64::INFINITY) }
+    #[inline(always)] fn min_value() -> Self { ff(-f64::INFINITY) }
 }
 
 impl RealExt for f64 {
+    #[inline(always)] fn pi() -> Self { 3.1415926535897931 }
+    #[inline(always)] fn e() -> Self { 2.7182818284590451 }
+    #[inline(always)] fn tau() -> Self { 6.2831853071795862 }
     #[inline(always)] fn c0() -> Self { 0.0000000000000000 }
     #[inline(always)] fn c1() -> Self { 1.0000000000000000 }
     #[inline(always)] fn c2() -> Self { 2.0000000000000000 }
@@ -103,12 +120,14 @@ impl RealExt for f64 {
     #[inline(always)] fn frac4() -> Self { 0.2500000000000000 }
     #[inline(always)] fn frac5() -> Self { 0.2000000000000000 }
     #[inline(always)] fn frac10() -> Self { 0.1000000000000000 }
+    #[inline(always)] fn frac_pi() -> Self { 0.3183098861837907 }
+    #[inline(always)] fn frac_e() -> Self { 0.3678794411714423 }
     #[inline(always)] fn sqrt2() -> Self { 1.4142135623730951 }
     #[inline(always)] fn sqrt3() -> Self { 1.7320508075688772 }
     #[inline(always)] fn sqrt5() -> Self { 2.2360679774997898 }
     #[inline(always)] fn sqrt10() -> Self { 3.1622776601683795 }
-    #[inline(always)] fn frac_180_pi() -> Self { 0.0174532925199433 }
-    #[inline(always)] fn frac_pi_180() -> Self { 57.2957795130823229 }
+    #[inline(always)] fn frac_180_pi() -> Self { 57.2957795130823229 }
+    #[inline(always)] fn frac_pi_180() -> Self { 0.0174532925199433 }
     #[inline(always)] fn sin0() -> Self { 0.0000000000000000 }
     #[inline(always)] fn sin15() -> Self { 0.2588190451025207 }
     #[inline(always)] fn sin30() -> Self { 0.4999999999999999 }
@@ -130,9 +149,14 @@ impl RealExt for f64 {
     #[inline(always)] fn tan60() -> Self { 1.7320508075688767 }
     #[inline(always)] fn tan75() -> Self { 3.7320508075688745 }
     #[inline(always)] fn tan90() -> Self { f64::INFINITY }
+    #[inline(always)] fn max_value() -> Self { f64::INFINITY }
+    #[inline(always)] fn min_value() -> Self { -f64::INFINITY }
 }
 
 impl RealExt for f32 {
+    #[inline(always)] fn pi() -> Self { 3.1415926535897931 }
+    #[inline(always)] fn e() -> Self { 2.7182818284590451 }
+    #[inline(always)] fn tau() -> Self { 6.2831853071795862 }
     #[inline(always)] fn c0() -> Self { 0.0000000000000000 }
     #[inline(always)] fn c1() -> Self { 1.0000000000000000 }
     #[inline(always)] fn c2() -> Self { 2.0000000000000000 }
@@ -145,12 +169,14 @@ impl RealExt for f32 {
     #[inline(always)] fn frac4() -> Self { 0.2500000000000000 }
     #[inline(always)] fn frac5() -> Self { 0.2000000000000000 }
     #[inline(always)] fn frac10() -> Self { 0.1000000000000000 }
+    #[inline(always)] fn frac_pi() -> Self { 0.3183098861837907 }
+    #[inline(always)] fn frac_e() -> Self { 0.3678794411714423 }
     #[inline(always)] fn sqrt2() -> Self { 1.4142135623730951 }
     #[inline(always)] fn sqrt3() -> Self { 1.7320508075688772 }
     #[inline(always)] fn sqrt5() -> Self { 2.2360679774997898 }
     #[inline(always)] fn sqrt10() -> Self { 3.1622776601683795 }
-    #[inline(always)] fn frac_180_pi() -> Self { 0.0174532925199433 }
-    #[inline(always)] fn frac_pi_180() -> Self { 57.2957795130823229 }
+    #[inline(always)] fn frac_180_pi() -> Self { 57.2957795130823229 }
+    #[inline(always)] fn frac_pi_180() -> Self { 0.0174532925199433 }
     #[inline(always)] fn sin0() -> Self { 0.0000000000000000 }
     #[inline(always)] fn sin15() -> Self { 0.2588190451025207 }
     #[inline(always)] fn sin30() -> Self { 0.4999999999999999 }
@@ -172,4 +198,6 @@ impl RealExt for f32 {
     #[inline(always)] fn tan60() -> Self { 1.7320508075688767 }
     #[inline(always)] fn tan75() -> Self { 3.7320508075688745 }
     #[inline(always)] fn tan90() -> Self { f32::INFINITY }
+    #[inline(always)] fn max_value() -> Self { f32::INFINITY }
+    #[inline(always)] fn min_value() -> Self { -f32::INFINITY }
 }

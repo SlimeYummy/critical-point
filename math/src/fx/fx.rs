@@ -1,5 +1,5 @@
+use super::convert;
 use approx::{AbsDiffEq, RelativeEq, UlpsEq};
-use fixed::traits::ToFixed;
 use fixed::types::I32F32;
 use num_traits::{Bounded, FromPrimitive, Num, One, Signed, Zero};
 use rand::distributions::{Distribution, OpenClosed01, Standard};
@@ -18,46 +18,46 @@ pub struct Fx(pub(crate) I32F32);
 
 impl Default for Fx {
     fn default() -> Fx {
-        Fx(I32F32::from_bits(0))
+        return Fx(I32F32::from_bits(0));
     }
 }
 
 impl Debug for Fx {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        Debug::fmt(&self.0, f)
+        return Debug::fmt(&self.0, f);
     }
 }
 
 impl Display for Fx {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        Display::fmt(&self.0, f)
+        return Display::fmt(&self.0, f);
     }
 }
 
 impl Hash for Fx {
     fn hash<H: Hasher>(&self, h: &mut H) {
-        self.0.hash(h);
+        return self.0.hash(h);
     }
 }
 
 impl PartialEq for Fx {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        return self.0 == other.0;
     }
 }
 
 impl PartialOrd for Fx {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.0.partial_cmp(&other.0)
+        return self.0.partial_cmp(&other.0);
     }
 }
 
 impl Ord for Fx {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
-        self.0.cmp(&other.0)
+        return self.0.cmp(&other.0);
     }
 }
 
@@ -65,7 +65,7 @@ impl Distribution<Fx> for Standard {
     #[inline]
     fn sample<'a, G: Rng + ?Sized>(&self, rng: &mut G) -> Fx {
         let bits = rng.gen();
-        Fx(I32F32::from_bits(bits))
+        return Fx(I32F32::from_bits(bits));
     }
 }
 
@@ -73,7 +73,7 @@ impl Distribution<Fx> for OpenClosed01 {
     #[inline]
     fn sample<'a, G: Rng + ?Sized>(&self, rng: &mut G) -> Fx {
         let val: f64 = rng.gen();
-        Fx(I32F32::from_num(val))
+        return Fx(I32F32::from_num(val));
     }
 }
 
@@ -85,41 +85,37 @@ impl SimdValue for Fx {
 
     #[inline(always)]
     fn lanes() -> usize {
-        1
+        return 1;
     }
 
     #[inline(always)]
     fn splat(val: Self::Element) -> Self {
-        val
+        return val;
     }
 
     #[inline(always)]
     fn extract(&self, _: usize) -> Self::Element {
-        *self
+        return *self;
     }
 
     #[inline(always)]
     unsafe fn extract_unchecked(&self, _: usize) -> Self::Element {
-        *self
+        return *self;
     }
 
     #[inline(always)]
     fn replace(&mut self, _: usize, val: Self::Element) {
-        *self = val
+        *self = val;
     }
 
     #[inline(always)]
     unsafe fn replace_unchecked(&mut self, _: usize, val: Self::Element) {
-        *self = val
+        *self = val;
     }
 
     #[inline(always)]
     fn select(self, cond: Self::SimdBool, other: Self) -> Self {
-        if cond {
-            self
-        } else {
-            other
-        }
+        return if cond { self } else { other };
     }
 }
 
@@ -127,7 +123,7 @@ impl Mul for Fx {
     type Output = Self;
     #[inline(always)]
     fn mul(self, rhs: Self) -> Self {
-        Self(self.0.saturating_mul(rhs.0))
+        return Self(self.0.saturating_mul(rhs.0));
     }
 }
 
@@ -136,14 +132,14 @@ impl Div for Fx {
     #[inline(always)]
     fn div(self, rhs: Self) -> Self {
         if !rhs.is_zero() {
-            Self(self.0.saturating_div(rhs.0))
+            return Self(self.0.saturating_div(rhs.0));
         } else {
             if self.0 > 0 {
-                Self::max_value()
+                return Self::max_value();
             } else if self.0 < 0 {
-                Self::min_value()
+                return Self::min_value();
             } else {
-                Self::zero()
+                return Self::zero();
             }
         }
     }
@@ -154,9 +150,9 @@ impl Rem for Fx {
     #[inline(always)]
     fn rem(self, rhs: Self) -> Self {
         if !rhs.is_zero() {
-            Self(self.0 % rhs.0)
+            return Self(self.0 % rhs.0);
         } else {
-            Self::zero()
+            return Self::zero();
         }
     }
 }
@@ -165,7 +161,7 @@ impl Add for Fx {
     type Output = Self;
     #[inline(always)]
     fn add(self, rhs: Self) -> Self {
-        Self(self.0.saturating_add(rhs.0))
+        return Self(self.0.saturating_add(rhs.0));
     }
 }
 
@@ -173,7 +169,7 @@ impl Sub for Fx {
     type Output = Self;
     #[inline(always)]
     fn sub(self, rhs: Self) -> Self {
-        Self(self.0.saturating_sub(rhs.0))
+        return Self(self.0.saturating_sub(rhs.0));
     }
 }
 
@@ -181,61 +177,61 @@ impl Neg for Fx {
     type Output = Self;
     #[inline(always)]
     fn neg(self) -> Self {
-        Self(-self.0)
+        return Self(-self.0);
     }
 }
 
 impl MulAssign for Fx {
     #[inline(always)]
     fn mul_assign(&mut self, rhs: Self) {
-        self.0 *= rhs.0
+        self.0 *= rhs.0;
     }
 }
 
 impl DivAssign for Fx {
     #[inline(always)]
     fn div_assign(&mut self, rhs: Self) {
-        self.0 /= rhs.0
+        self.0 /= rhs.0;
     }
 }
 
 impl RemAssign for Fx {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: Self) {
-        self.0 %= rhs.0
+        self.0 %= rhs.0;
     }
 }
 
 impl AddAssign for Fx {
     #[inline(always)]
     fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0
+        self.0 += rhs.0;
     }
 }
 
 impl SubAssign for Fx {
     #[inline(always)]
     fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0
+        self.0 -= rhs.0;
     }
 }
 
 impl Zero for Fx {
     #[inline(always)]
     fn zero() -> Self {
-        Self(I32F32::from_num(0))
+        return Self(I32F32::from_num(0));
     }
 
     #[inline(always)]
     fn is_zero(&self) -> bool {
-        self.0 == Self::zero().0
+        return self.0 == Self::zero().0;
     }
 }
 
 impl One for Fx {
     #[inline(always)]
     fn one() -> Self {
-        Self(I32F32::from_num(1))
+        return Self(I32F32::from_num(1));
     }
 }
 
@@ -251,66 +247,66 @@ impl Field for Fx {}
 impl SubsetOf<Fx> for f64 {
     #[inline]
     fn to_superset(&self) -> Fx {
-        Fx(I32F32::from_num(*self))
+        return Fx(I32F32::from_num(*self));
     }
 
     #[inline]
     fn from_superset(element: &Fx) -> Option<Self> {
-        Some(Self::from_superset_unchecked(element))
+        return Some(Self::from_superset_unchecked(element));
     }
 
     #[inline]
     fn from_superset_unchecked(element: &Fx) -> Self {
-        element.0.to_num::<f64>()
+        return element.0.to_num::<f64>();
     }
 
     #[inline]
     fn is_in_subset(_: &Fx) -> bool {
-        true
+        return true;
     }
 }
 
 impl SubsetOf<Fx> for Fx {
     #[inline]
     fn to_superset(&self) -> Fx {
-        *self
+        return *self;
     }
 
     #[inline]
     fn from_superset(element: &Fx) -> Option<Self> {
-        Some(*element)
+        return Some(*element);
     }
 
     #[inline]
     fn from_superset_unchecked(element: &Fx) -> Self {
-        *element
+        return *element;
     }
 
     #[inline]
     fn is_in_subset(_: &Fx) -> bool {
-        true
+        return true;
     }
 }
 
 impl AbsDiffEq for Fx {
     type Epsilon = Self;
     fn default_epsilon() -> Self::Epsilon {
-        Self(I32F32::from_bits(0x16))
+        return Self(I32F32::from_bits(0x16));
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         // This is the impl used in the approx crate.
         if self > other {
-            (*self - *other) <= epsilon
+            return (*self - *other) <= epsilon;
         } else {
-            (*other - *self) <= epsilon
+            return (*other - *self) <= epsilon;
         }
     }
 }
 
 impl RelativeEq for Fx {
     fn default_max_relative() -> Self::Epsilon {
-        Self::default_epsilon()
+        return Self::default_epsilon();
     }
 
     fn relative_eq(
@@ -335,13 +331,13 @@ impl RelativeEq for Fx {
             abs_self
         };
 
-        abs_diff <= largest * max_relative
+        return abs_diff <= largest * max_relative;
     }
 }
 
 impl UlpsEq for Fx {
     fn default_max_ulps() -> u32 {
-        4
+        return 4;
     }
 
     fn ulps_eq(&self, other: &Self, epsilon: Self::Epsilon, max_ulps: u32) -> bool {
@@ -357,9 +353,9 @@ impl UlpsEq for Fx {
         let bits2 = other.0.to_bits();
 
         if bits1 > bits2 {
-            (bits1 - bits2) <= max_ulps as i64
+            return (bits1 - bits2) <= max_ulps as i64;
         } else {
-            (bits2 - bits1) <= max_ulps as i64
+            return (bits2 - bits1) <= max_ulps as i64;
         }
     }
 }
@@ -367,73 +363,73 @@ impl UlpsEq for Fx {
 impl Bounded for Fx {
     #[inline]
     fn min_value() -> Self {
-        Self(I32F32::MIN)
+        return Self(I32F32::MIN);
     }
 
     #[inline]
     fn max_value() -> Self {
-        Self(I32F32::MAX)
+        return Self(I32F32::MAX);
     }
 }
 
 impl FromPrimitive for Fx {
     fn from_i64(n: i64) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_i64(n));
     }
     fn from_u64(n: u64) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_u64(n));
     }
     fn from_isize(n: isize) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_isize(n));
     }
     fn from_i8(n: i8) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_i8(n));
     }
     fn from_i16(n: i16) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_i16(n));
     }
     fn from_i32(n: i32) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_i32(n));
     }
     fn from_usize(n: usize) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_usize(n));
     }
     fn from_u8(n: u8) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_u8(n));
     }
     fn from_u16(n: u16) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_u16(n));
     }
     fn from_u32(n: u32) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_u32(n));
     }
     fn from_f32(n: f32) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_f32(n));
     }
     fn from_f64(n: f64) -> Option<Self> {
-        n.checked_to_fixed().map(Self)
+        return Some(convert::fx_f64(n));
     }
 }
 
 impl Signed for Fx {
     fn abs(&self) -> Self {
-        Self(self.0.abs())
+        return Self(self.0.abs());
     }
 
     fn abs_sub(&self, other: &Self) -> Self {
-        self.abs() - *other
+        return self.abs() - *other;
     }
 
     fn signum(&self) -> Self {
-        Self(self.0.signum())
+        return Self(self.0.signum());
     }
 
     fn is_positive(&self) -> bool {
-        self.0 >= Self::zero().0
+        return self.0 >= Self::zero().0;
     }
 
     fn is_negative(&self) -> bool {
-        self.0 <= Self::zero().0
+        return self.0 <= Self::zero().0;
     }
 }
 
@@ -442,110 +438,110 @@ impl ComplexField for Fx {
 
     #[inline]
     fn from_real(re: Self::RealField) -> Self {
-        re
+        return re;
     }
 
     #[inline]
     fn real(self) -> Self::RealField {
-        self
+        return self;
     }
 
     #[inline]
     fn imaginary(self) -> Self::RealField {
-        Self::zero()
+        return Self::zero();
     }
 
     #[inline]
     fn norm1(self) -> Self::RealField {
-        self.abs()
+        return self.abs();
     }
 
     #[inline]
     fn modulus(self) -> Self::RealField {
-        self.abs()
+        return self.abs();
     }
 
     #[inline]
     fn modulus_squared(self) -> Self::RealField {
-        self * self
+        return self * self;
     }
 
     #[inline]
     fn argument(self) -> Self::RealField {
         if self >= Self::zero() {
-            Self::zero()
+            return Self::zero();
         } else {
-            Self::pi()
+            return Self::pi();
         }
     }
 
     #[inline]
     fn to_exp(self) -> (Self, Self) {
         if self >= Self::zero() {
-            (self, Self::one())
+            return (self, Self::one());
         } else {
-            (-self, -Self::one())
+            return (-self, -Self::one());
         }
     }
 
     #[inline]
     fn recip(self) -> Self {
-        Self::one() / self
+        return Self::one() / self;
     }
 
     #[inline]
     fn conjugate(self) -> Self {
-        self
+        return self;
     }
 
     #[inline]
     fn scale(self, factor: Self::RealField) -> Self {
-        self * factor
+        return self * factor;
     }
 
     #[inline]
     fn unscale(self, factor: Self::RealField) -> Self {
-        self / factor
+        return self / factor;
     }
 
     #[inline]
     fn floor(self) -> Self {
-        Self(self.0.floor())
+        return Self(self.0.floor());
     }
 
     #[inline]
     fn ceil(self) -> Self {
-        Self(self.0.ceil())
+        return Self(self.0.ceil());
     }
 
     #[inline]
     fn round(self) -> Self {
-        Self(self.0.round())
+        return Self(self.0.round());
     }
 
     #[inline]
     fn trunc(self) -> Self {
-        Self(self.0.int())
+        return Self(self.0.int());
     }
 
     #[inline]
     fn fract(self) -> Self {
-        Self(self.0.frac())
+        return Self(self.0.frac());
     }
 
     #[inline]
     fn abs(self) -> Self {
-        Self(self.0.abs())
+        return Self(self.0.abs());
     }
 
     #[inline]
     fn signum(self) -> Self {
-        Self(self.0.signum())
+        return Self(self.0.signum());
     }
 
     #[inline]
     fn mul_add(self, a: Self, b: Self) -> Self {
-        self * a + b
+        return self * a + b;
     }
 
     #[inline]
@@ -565,21 +561,21 @@ impl ComplexField for Fx {
 
     #[inline]
     fn sqrt(self) -> Self {
-        Self(cordic::sqrt(self.0))
+        return Self(cordic::sqrt(self.0));
     }
 
     #[inline]
     fn try_sqrt(self) -> Option<Self> {
         if self >= Self::zero() {
-            Some(self.sqrt())
+            return Some(self.sqrt());
         } else {
-            None
+            return None;
         }
     }
 
     #[inline]
     fn exp(self) -> Self {
-        Self(cordic::exp(self.0))
+        return Self(cordic::exp(self.0));
     }
 
     #[inline]
@@ -634,33 +630,33 @@ impl ComplexField for Fx {
 
     #[inline]
     fn cos(self) -> Self {
-        Self(cordic::cos(self.0))
+        return Self(cordic::cos(self.0));
     }
 
     #[inline]
     fn tan(self) -> Self {
-        Self(cordic::tan(self.0))
+        return Self(cordic::tan(self.0));
     }
 
     #[inline]
     fn asin(self) -> Self {
-        Self(cordic::asin(self.0))
+        return Self(cordic::asin(self.0));
     }
 
     #[inline]
     fn acos(self) -> Self {
-        Self(cordic::acos(self.0))
+        return Self(cordic::acos(self.0));
     }
 
     #[inline]
     fn atan(self) -> Self {
-        Self(cordic::atan(self.0))
+        return Self(cordic::atan(self.0));
     }
 
     #[inline]
     fn sin_cos(self) -> (Self, Self) {
         let (sin, cos) = cordic::sin_cos(self.0);
-        (Self(sin), Self(cos))
+        return (Self(sin), Self(cos));
     }
 
     #[inline]
@@ -695,152 +691,152 @@ impl ComplexField for Fx {
 
     #[inline]
     fn is_finite(&self) -> bool {
-        true
+        return true;
     }
 }
 
 impl RealField for Fx {
     #[inline]
     fn is_sign_positive(self) -> bool {
-        self.0.is_positive()
+        return self.0.is_positive();
     }
 
     #[inline]
     fn is_sign_negative(self) -> bool {
-        self.0.is_negative()
+        return self.0.is_negative();
     }
 
     #[inline]
     fn copysign(self, sign: Self) -> Self {
         if sign >= Self::zero() {
-            self.abs()
+            return self.abs();
         } else {
-            -self.abs()
+            return -self.abs();
         }
     }
 
     #[inline]
     fn max(self, other: Self) -> Self {
         if self >= other {
-            self
+            return self;
         } else {
-            other
+            return other;
         }
     }
 
     #[inline]
     fn min(self, other: Self) -> Self {
         if self < other {
-            self
+            return self;
         } else {
-            other
+            return other;
         }
     }
 
     #[inline]
     fn clamp(self, min: Self, max: Self) -> Self {
         if self < min {
-            min
+            return min;
         } else if self > max {
-            max
+            return max;
         } else {
-            self
+            return self;
         }
     }
 
     #[inline]
     fn atan2(self, other: Self) -> Self {
-        Self(cordic::atan2(self.0, other.0))
+        return Self(cordic::atan2(self.0, other.0));
     }
 
     /// Archimedes' constant.
     #[inline]
     fn pi() -> Self {
-        Self(I32F32::PI)
+        return Self(I32F32::PI);
     }
 
     /// 2.0 * pi.
     #[inline]
     fn two_pi() -> Self {
-        Self::pi() + Self::pi()
+        return Self::pi() + Self::pi();
     }
 
     /// pi / 2.0.
     #[inline]
     fn frac_pi_2() -> Self {
-        Self(I32F32::FRAC_PI_2)
+        return Self(I32F32::FRAC_PI_2);
     }
 
     /// pi / 3.0.
     #[inline]
     fn frac_pi_3() -> Self {
-        Self(I32F32::FRAC_PI_3)
+        return Self(I32F32::FRAC_PI_3);
     }
 
     /// pi / 4.0.
     #[inline]
     fn frac_pi_4() -> Self {
-        Self(I32F32::FRAC_PI_4)
+        return Self(I32F32::FRAC_PI_4);
     }
 
     /// pi / 6.0.
     #[inline]
     fn frac_pi_6() -> Self {
-        Self(I32F32::FRAC_PI_6)
+        return Self(I32F32::FRAC_PI_6);
     }
 
     /// pi / 8.0.
     #[inline]
     fn frac_pi_8() -> Self {
-        Self(I32F32::FRAC_PI_8)
+        return Self(I32F32::FRAC_PI_8);
     }
 
     /// 1.0 / pi.
     #[inline]
     fn frac_1_pi() -> Self {
-        Self(I32F32::FRAC_1_PI)
+        return Self(I32F32::FRAC_1_PI);
     }
 
     /// 2.0 / pi.
     #[inline]
     fn frac_2_pi() -> Self {
-        Self(I32F32::FRAC_2_PI)
+        return Self(I32F32::FRAC_2_PI);
     }
 
     /// 2.0 / sqrt(pi).
     #[inline]
     fn frac_2_sqrt_pi() -> Self {
-        Self(I32F32::FRAC_2_SQRT_PI)
+        return Self(I32F32::FRAC_2_SQRT_PI);
     }
 
     /// Euler's number.
     #[inline]
     fn e() -> Self {
-        Self(I32F32::E)
+        return Self(I32F32::E);
     }
 
     /// log2(e).
     #[inline]
     fn log2_e() -> Self {
-        Self(I32F32::LOG2_E)
+        return Self(I32F32::LOG2_E);
     }
 
     /// log10(e).
     #[inline]
     fn log10_e() -> Self {
-        Self(I32F32::LOG10_E)
+        return Self(I32F32::LOG10_E);
     }
 
     /// ln(2.0).
     #[inline]
     fn ln_2() -> Self {
-        Self(I32F32::LN_2)
+        return Self(I32F32::LN_2);
     }
 
     /// ln(10.0).
     #[inline]
     fn ln_10() -> Self {
-        Self(I32F32::LN_10)
+        return Self(I32F32::LN_10);
     }
 }
 
