@@ -225,7 +225,7 @@ impl<T: ?Sized> RcCell<T> {
     pub unsafe fn as_ptr_mut(this: &Self) -> *mut T {
         let ptr = this.ptr.as_ptr();
         let fake_ptr = ptr as *mut T;
-        let offset = data_offset(this.inner());
+        let offset = data_offset::<RcCellBox<T>, RcCellBox<()>>(this.inner());
         return set_data_ptr(fake_ptr, (ptr as *mut u8).offset(offset));
     }
 
@@ -358,9 +358,9 @@ unsafe fn set_data_ptr<T: ?Sized, U>(mut ptr: *mut T, data: *mut U) -> *mut T {
     return ptr;
 }
 
-unsafe fn data_offset<T: ?Sized>(ptr: *const T) -> isize {
+unsafe fn data_offset<T: ?Sized, B>(ptr: *const T) -> isize {
     let align = mem::align_of_val(&*ptr);
-    let layout = Layout::new::<RcCellBox<()>>();
+    let layout = Layout::new::<B>();
     return (layout.size() + layout.padding_needed_for(align)) as isize;
 }
 
