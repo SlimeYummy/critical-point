@@ -1,28 +1,50 @@
+#![feature(once_cell)]
+
 extern crate proc_macro;
 
+mod csharp;
+mod script;
+mod utils;
+
+use csharp::{csharp_enum, csharp_prop, csharp_state};
 use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
-use quote::{quote, ToTokens};
+use quote::quote;
+use script::{script_opt_impl, script_var_impl};
 use syn::*;
 
-#[proc_macro_derive(ResObjX, attributes(class_id))]
-pub fn res_obj(input: TokenStream) -> TokenStream {
+#[proc_macro_attribute]
+pub fn def_struct(_: TokenStream, token: TokenStream) -> TokenStream {
+    return token;
+}
+
+#[proc_macro_attribute]
+pub fn def_enum(_: TokenStream, token: TokenStream) -> TokenStream {
+    let token_copy = token.clone();
+    let item_enum = parse_macro_input!(token as ItemEnum);
+    csharp_enum(item_enum);
+    return token_copy;
+}
+
+#[proc_macro_attribute]
+pub fn def_res(attr: TokenStream, input: TokenStream) -> TokenStream {
     let class = parse_macro_input!(input as ItemStruct);
     let res = &class.ident;
-    let class_id = extract_class_id(&class.attrs, "ResObjX");
+    let class_id = parse_macro_input!(attr as Expr);
 
     return TokenStream::from(quote! {
+        #class
+
         impl crate::resource::ResObjStatic for #res {
             #[inline]
             fn id() -> crate::id::ClassID {
-                return crate::id::ClassID::#class_id;
+                return #class_id;
             }
         }
 
         impl crate::resource::ResObjSuper for #res {
             #[inline]
             fn class_id(&self) -> crate::id::ClassID {
-                return crate::id::ClassID::#class_id;
+                return #class_id;
             }
 
             #[inline]
@@ -38,83 +60,84 @@ pub fn res_obj(input: TokenStream) -> TokenStream {
     });
 }
 
-#[proc_macro_derive(StateDataX, attributes(class_id))]
-pub fn state_data(input: TokenStream) -> TokenStream {
-    let class = parse_macro_input!(input as ItemStruct);
-    let data = &class.ident;
-    let class_id = extract_class_id(&class.attrs, "StateDataX");
+#[proc_macro_attribute]
+pub fn def_prop(attr: TokenStream, class: TokenStream) -> TokenStream {
+    let class = parse_macro_input!(class as ItemStruct);
+    csharp_prop(class.clone(), &attr.to_string());
+
+    let class_name = &class.ident;
+    let class_id = parse_macro_input!(attr as Expr);
 
     return TokenStream::from(quote! {
-        impl crate::state::StateDataStatic for #data {
+        #[repr(C)]
+        #class
+
+        impl crate::engine::LogicPropStatic for #class_name {
             #[inline]
             fn id() -> crate::id::ClassID {
-                return crate::id::ClassID::#class_id;
-            }
-
-            fn init(
-                fobj_id: crate::id::FastObjID,
-                lifecycle: crate::state::StateLifecycle,
-            ) -> Self {
-                let mut this = Self::default();
-                this.fobj_id = fobj_id;
-                this.lifecycle = lifecycle;
-                return this;
-            }
-        }
-
-        impl crate::state::StateData for #data {
-            #[inline]
-            fn class_id(&self) -> crate::id::ClassID {
-                return crate::id::ClassID::#class_id;
-            }
-
-            #[inline]
-            fn fobj_id(&self) -> crate::id::FastObjID {
-                return self.fobj_id;
-            }
-
-            #[inline]
-            fn lifecycle(&self) -> crate::state::StateLifecycle {
-                return self.lifecycle;
+                return #class_id;
             }
         }
     });
 }
 
-#[proc_macro_derive(LogicObjX, attributes(class_id))]
-pub fn logic_obj(input: TokenStream) -> TokenStream {
-    let class = parse_macro_input!(input as ItemStruct);
-    let logic = &class.ident;
-    let class_id = extract_class_id(&class.attrs, "LogicObjX");
+#[proc_macro_attribute]
+pub fn def_state(attr: TokenStream, class: TokenStream) -> TokenStream {
+    let class = parse_macro_input!(class as ItemStruct);
+    csharp_state(class.clone(), &attr.to_string());
+
+    let class_name = &class.ident;
+    let class_id = parse_macro_input!(attr as Expr);
 
     return TokenStream::from(quote! {
-        impl crate::engine::LogicObjStatic for #logic {
+        #[repr(C)]
+        #class
+
+        impl crate::engine::LogicStateStatic for #class_name {
             #[inline]
             fn id() -> crate::id::ClassID {
-                return crate::id::ClassID::#class_id;
-            }
-        }
-
-        impl crate::engine::LogicObj for #logic {
-            #[inline]
-            fn class_id(&self) -> crate::id::ClassID {
-                return crate::id::ClassID::#class_id;
-            }
-
-            #[inline]
-            fn fobj_id(&self) -> crate::id::FastObjID {
-                return self.fobj_id;
+                return #class_id;
             }
         }
     });
 }
 
-fn extract_class_id(attrs: &[Attribute], msg: &str) -> TokenStream2 {
-    let res = attrs.iter().find(|a| a.path.is_ident("class_id"));
-    if let Some(attr) = res {
-        if let Ok(expr) = attr.parse_args::<Expr>() {
-            return expr.into_token_stream();
+#[proc_macro_attribute]
+pub fn def_obj(attr: TokenStream, class: TokenStream) -> TokenStream {
+    let class = parse_macro_input!(class as ItemStruct);
+    let class_name = &class.ident;
+    let class_id = parse_macro_input!(attr as Expr);
+
+    return TokenStream::from(quote! {
+        #class
+
+        impl crate::engine::LogicObjStatic for #class_name {
+            #[inline]
+            fn id() -> crate::id::ClassID {
+                return #class_id;
+            }
         }
-    }
-    panic!("#[{}(CLASS_ID)] => Need a ClassID.", msg);
+
+        impl crate::engine::LogicObjSuper for #class_name {
+            #[inline]
+            fn class_id(&self) -> crate::id::ClassID {
+                return #class_id;
+            }
+
+            #[inline]
+            fn obj_id(&self) -> crate::id::ObjID {
+                return self.obj_id;
+            }
+        }
+    });
+}
+
+#[proc_macro_derive(ScriptOpt, attributes(sign, func))]
+pub fn script_opt(input: TokenStream) -> TokenStream {
+    return script_opt_impl(input);
+}
+
+#[proc_macro_derive(ScriptVar, attributes(script))]
+pub fn script_var(input: TokenStream) -> TokenStream {
+    return script_var_impl(input);
 }
