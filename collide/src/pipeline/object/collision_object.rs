@@ -10,14 +10,14 @@ use ncollide3d::pipeline::{
 use ncollide3d::shape::{Shape, ShapeHandle};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CollisionObjectClass {
-    Stage = 0,
+pub enum CollisionObjectType {
+    Static = 0,
     Move = 1,
     Hit = 2,
 }
 
 pub struct CollisionObject<T> {
-    obj_type: CollisionObjectClass,
+    obj_type: CollisionObjectType,
     proxy_handle: Option<BroadPhaseProxyHandle>,
     graph_index: Option<CollisionObjectGraphIndex>,
     position: Isometry<Fx>,
@@ -31,7 +31,7 @@ pub struct CollisionObject<T> {
 
 impl<T> CollisionObject<T> {
     pub fn new(
-        obj_type: CollisionObjectClass,
+        obj_type: CollisionObjectType,
         proxy_handle: Option<BroadPhaseProxyHandle>,
         graph_index: Option<CollisionObjectGraphIndex>,
         position: Isometry<Fx>,
@@ -55,7 +55,7 @@ impl<T> CollisionObject<T> {
     }
 
     #[inline]
-    pub fn obj_type(&self) -> CollisionObjectClass {
+    pub fn obj_type(&self) -> CollisionObjectType {
         return self.obj_type;
     }
 
