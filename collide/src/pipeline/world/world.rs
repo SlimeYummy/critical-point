@@ -1,8 +1,8 @@
 use super::handler::CollisionWorldInterferenceHandler;
 use crate::pipeline::broad_phase::DBVTBroadPhase;
 use crate::pipeline::object::{
-    CollisionGroups, CollisionObject, CollisionObjectClass, CollisionObjectSet,
-    CollisionObjectSlab, CollisionObjectSlabHandle, CollisionObjects, GeometricQueryType,
+    CollisionGroups, CollisionObject, CollisionObjectSet, CollisionObjectSlab,
+    CollisionObjectSlabHandle, CollisionObjectType, CollisionObjects, GeometricQueryType,
 };
 use anyhow::{anyhow, Result};
 use math::{fi, Fx, RealExt};
@@ -55,7 +55,7 @@ impl<T: 'static> CollisionWorld<T> {
 
     pub fn add(
         &mut self,
-        obj_type: CollisionObjectClass,
+        obj_type: CollisionObjectType,
         position: Isometry<Fx>,
         shape: ShapeHandle<Fx>,
         collision_groups: CollisionGroups,
@@ -85,10 +85,11 @@ impl<T: 'static> CollisionWorld<T> {
         return (handle, entry.insert(co));
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, types: &[CollisionObjectType]) {
         self.narrow_phase.clear_events();
 
         Self::perform_broad_phase(
+            types,
             &self.objects,
             &mut self.broad_phase,
             &mut self.narrow_phase,
@@ -108,6 +109,7 @@ impl<T: 'static> CollisionWorld<T> {
     }
 
     fn perform_broad_phase(
+        types: &[CollisionObjectType],
         objects: &CollisionObjectSlab<T>,
         broad_phase: &mut DBVTBroadPhase<AABB<Fx>>,
         narrow_phase: &mut NarrowPhase<Fx, CollisionObjectSlabHandle>,
@@ -128,14 +130,12 @@ impl<T: 'static> CollisionWorld<T> {
         });
 
         // Update the broad-phase.
-        broad_phase.update(
-            false,
-            &mut CollisionWorldInterferenceHandler {
-                interactions,
-                narrow_phase,
-                objects,
-            },
-        );
+        let mut handler = CollisionWorldInterferenceHandler {
+            interactions,
+            narrow_phase,
+            objects,
+        };
+        broad_phase.update(types, &mut handler);
     }
 
     fn perform_narrow_phase(
@@ -208,7 +208,7 @@ impl<T: 'static> CollisionWorld<T> {
 
     pub fn interferences_with_point<'a, 'b, 'c>(
         &'a mut self,
-        obj_type: CollisionObjectClass,
+        obj_type: CollisionObjectType,
         point: &'b Point<Fx>,
         groups: &'b CollisionGroups,
         out: &'c mut Vec<CollisionObjectSlabHandle>,
@@ -230,7 +230,7 @@ impl<T: 'static> CollisionWorld<T> {
 
     pub fn interferences_with_aabb<'a, 'b, 'c>(
         &'a mut self,
-        obj_type: CollisionObjectClass,
+        obj_type: CollisionObjectType,
         aabb: &'b AABB<Fx>,
         groups: &'b CollisionGroups,
         out: &'c mut Vec<CollisionObjectSlabHandle>,
@@ -250,7 +250,7 @@ impl<T: 'static> CollisionWorld<T> {
 
     pub fn interferences_with_ray<'a, 'b, 'c>(
         &'a mut self,
-        obj_type: CollisionObjectClass,
+        obj_type: CollisionObjectType,
         ray: &'b Ray<Fx>,
         max_toi: Fx,
         groups: &'b CollisionGroups,
@@ -277,7 +277,7 @@ impl<T: 'static> CollisionWorld<T> {
 
     pub fn first_interference_with_ray<'a, 'b>(
         &'a mut self,
-        obj_type: CollisionObjectClass,
+        obj_type: CollisionObjectType,
         ray: &'b Ray<Fx>,
         max_toi: Fx,
         groups: &'b CollisionGroups,
@@ -304,7 +304,7 @@ impl<T: 'static> CollisionWorld<T> {
 
     pub fn sweep_test<'a, 'b>(
         &'a mut self,
-        obj_type: CollisionObjectClass,
+        obj_type: CollisionObjectType,
         shape: &'b dyn Shape<Fx>,
         isometry: &'b Isometry<Fx>,
         direction: &'b Unit<Vector<Fx>>,

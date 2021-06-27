@@ -26,6 +26,10 @@ where
         };
     }
 
+    pub fn get(&self, leaf_id: DBVTLeafId) -> Option<&DBVTLeaf<Fx, T, BV>> {
+        return self.dbvt.get(leaf_id);
+    }
+
     pub fn insert(&mut self, leaf: DBVTLeaf<Fx, T, BV>) -> DBVTLeafId {
         return self.dbvt.insert(leaf);
     }
