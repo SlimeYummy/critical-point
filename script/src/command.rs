@@ -5,8 +5,8 @@ use std::{fmt, lazy::SyncLazy};
 pub enum ScriptOpt {
     // jump
     Jmp,
-    JmpCmp, // if !expr { pc = addr; }
-    JmpSet, // stack.push(val); pc = addr;
+    JmpCmp,  // if !expr { pc = addr; }
+    JmpSet,  // stack.push(val); pc = addr;
     JmpCas0, // if !expr { stack.push(val); pc = addr; }
     JmpCas1, // if expr { stack.push(val); pc = addr; }
 
@@ -39,9 +39,9 @@ pub enum ScriptOpt {
     Floor,
     Ceil,
     Round,
-    Clamp, // x, min, max => x in [min, max]
+    Clamp,    // x, min, max => x in [min, max]
     Saturate, // x => x in [0, 1]
-    Lerp, // x, y, s => x + s(y - x)
+    Lerp,     // x, y, s => x + s(y - x)
 
     // exponential function
     Sqrt,
@@ -92,19 +92,19 @@ pub struct ScriptOptMeta {
 
 impl ScriptOptMeta {
     fn sign(args: &[u8]) -> ScriptOptMeta {
-        return ScriptOptMeta{
+        return ScriptOptMeta {
             func: false,
             ident: "",
             args: args.iter().map(|x| *x != 0).collect(),
-        }
+        };
     }
-    
+
     fn func(ident: &'static str, args: &[u8]) -> ScriptOptMeta {
-        return ScriptOptMeta{
-            func: false,
+        return ScriptOptMeta {
+            func: true,
             ident,
             args: args.iter().map(|x| *x != 0).collect(),
-        }
+        };
     }
 }
 
