@@ -23,6 +23,9 @@ impl AstStat {
     pub fn new_assign(opt: Option<ScriptOpt>, var: ScriptAddr, expr: AstExpr) -> AstStat {
         return AstStat::Assign(AstStatAssign::new(opt, var, expr));
     }
+    pub fn new_call(args: Vec<AstExpr>) -> AstStat {
+        return AstStat::Call(AstStatCall::new(args));
+    }
 
     pub fn new_branch(
         cond: Option<AstExpr>,
@@ -35,6 +38,13 @@ impl AstStat {
     pub fn is_assign(&self) -> bool {
         return match self {
             &AstStat::Assign(_) => true,
+            _ => false,
+        };
+    }
+
+    pub fn is_call(&self) -> bool {
+        return match self {
+            &AstStat::Call(_) => true,
             _ => false,
         };
     }
@@ -66,13 +76,12 @@ impl AstStatAssign {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AstStatCall {
-    pub opt: ScriptOpt,
     pub args: Vec<AstExpr>,
 }
 
 impl AstStatCall {
-    pub fn new(opt: ScriptOpt, args: Vec<AstExpr>) -> AstStatCall {
-        return AstStatCall { opt, args };
+    pub fn new(args: Vec<AstExpr>) -> AstStatCall {
+        return AstStatCall { args };
     }
 }
 
@@ -99,7 +108,7 @@ impl AstStatBranch {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AstExpr {
-    Fx(Fx),
+    Num(Fx),
     ID(usize),
     Var(ScriptAddr),
     Normal(AstExprNormal),
@@ -108,8 +117,8 @@ pub enum AstExpr {
 }
 
 impl AstExpr {
-    pub fn new_fx(num: Fx) -> AstExpr {
-        return AstExpr::Fx(num);
+    pub fn new_num(num: Fx) -> AstExpr {
+        return AstExpr::Num(num);
     }
 
     pub fn new_id(num: usize) -> AstExpr {
@@ -134,7 +143,7 @@ impl AstExpr {
 
     pub fn is_fx(&self) -> bool {
         return match self {
-            &AstExpr::Fx(_) => true,
+            &AstExpr::Num(_) => true,
             _ => false,
         };
     }
