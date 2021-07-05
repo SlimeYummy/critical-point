@@ -1,36 +1,10 @@
 use core::slice;
 use std::mem;
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ScriptEnv {
-    Action,
-    Skill,
-    Buff,
-    Expr,
-    Test,
-}
-
-#[derive(Debug, Clone)]
-pub struct ScriptEnvSet(u32);
-
-impl ScriptEnvSet {
-    pub fn new(envs: &[ScriptEnv]) -> ScriptEnvSet {
-        let mut bits = 0;
-        for env in envs {
-            bits |= 1 << (*env as u32);
-        }
-        return ScriptEnvSet(bits);
-    }
-
-    pub fn conatin(&self, env: ScriptEnv) -> bool {
-        return self.0 & (1 << (env as u32)) != 0;
-    }
-}
-
 #[derive(Debug)]
 pub struct ScriptByteCode {
-    env: ScriptEnv,
+    ext_id: u16,
+    ctx_id: u16,
     const_len: usize,
     code_len: usize,
     buffer: Vec<u8>,
@@ -38,7 +12,8 @@ pub struct ScriptByteCode {
 
 impl ScriptByteCode {
     pub(super) fn new(
-        env: ScriptEnv,
+        ext_id: u16,
+        ctx_id: u16,
         const_segment: &[usize],
         code_segment: &[u16],
     ) -> ScriptByteCode {
@@ -53,15 +28,16 @@ impl ScriptByteCode {
         });
 
         return ScriptByteCode {
-            env,
+            ext_id,
+            ctx_id,
             const_len: const_segment.len(),
             code_len: code_segment.len(),
             buffer,
         };
     }
 
-    pub fn env(&self) -> ScriptEnv {
-        return self.env;
+    pub fn ctx_id(&self) -> u16 {
+        return self.ctx_id;
     }
 
     pub fn const_len(&self) -> usize {
