@@ -1,0 +1,110 @@
+Script = { SOI ~ Stat+ ~ EOI }
+
+//
+// statement
+//
+
+Stat = _{ IfStat | Assign | CallStat  }
+
+//
+// assign statement
+//
+
+Assign = { Ident ~ (RawAssign | AddAssign | SubAssign) ~ Expr }
+RawAssign = { "=" }
+AddAssign = { "+=" }
+SubAssign = { "-=" }
+
+//
+// call statement
+//
+
+CallStat = { Ident ~ "(" ~ (Expr ~ ",")? ~ (Expr ~ ","?)* ~ ")" }
+
+//
+// condition statement
+//
+
+IfStat = { "if" ~ Expr ~ "{" ~ Stat* ~ "}" ~ (ElsifStat | ElseStat)? }
+ElsifStat = { "elsif" ~ Expr ~ "{" ~ Stat* ~ "}" ~ (ElsifStat | ElseStat)? }
+ElseStat = { "else" ~ "{" ~ Stat* ~ "}" }
+
+//
+// expression
+//
+
+Expr = { Primary ~ (Binary ~ Primary)* }
+Primary = _{ Group | IfExpr | CallExpr | Ident | Number | Unary | ID }
+
+CallExpr = { Ident ~ "(" ~ (Expr ~ ",")? ~ (Expr ~ ","?)* ~ ")" }
+
+Group = { "(" ~ Expr ~ ")" }
+
+//
+// condition expression
+//
+
+IfExpr = { "if" ~ Expr ~ "{" ~ Expr ~ "}" ~ (ElsifExpr | ElseExpr) }
+ElsifExpr = { "elsif" ~ Expr ~ "{" ~ Expr ~ "}" ~ (ElsifExpr | ElseExpr) }
+ElseExpr = { "else" ~ "{" ~ Expr ~ "}" }
+
+//
+// unary operation
+//
+
+Unary = { (Pos | Neg | Not) ~ Expr }
+Pos = { "+" }
+Neg = { "-" }
+Not = { "!" }
+
+//
+// binary operation
+//
+
+Binary = _{ Mul | Div | Rem | Add | Sub | Le | Lt | Ge | Gt | Eq | Ne | And | Or }
+Mul = { "*" }
+Div = { "/" }
+Rem = { "%" }
+Add = { "+" }
+Sub = { "-" }
+Le = { "<=" }
+Lt = { "<" }
+Ge = { ">=" }
+Gt = { ">" }
+Eq = { "==" }
+Ne = { "!=" }
+And = { "&&" }
+Or = { "||" }
+
+//
+// ident: variable / constant / function name ...
+//
+
+Ident = @{ Word ~ ("." ~ Word)* }
+Word = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+
+//
+// number
+//
+
+Number = { Hex | Float }
+Float = @{
+  ("-" | "+")?
+  ~ ("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)
+  ~ ("." ~ ASCII_DIGIT*)?
+  ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+}
+Hex = @{ "0x" ~ ASCII_HEX_DIGIT{1,8} }
+
+//
+// id
+//
+
+ID = @{ "$" ~ Ident }
+
+//
+// ...
+//
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ "#" ~ ANY }
