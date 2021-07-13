@@ -17,7 +17,7 @@ pub enum ScriptOpt {
     JmpCas1, // if expr { stack.push(val); pc = addr; }
 
     // unary
-    Pos,
+    Mov,
     Neg,
     Not,
 
@@ -60,22 +60,9 @@ pub enum ScriptOpt {
     Cos,
     Tan,
 
-    Ext0,
-    Ext1,
-    Ext2,
-    Ext3,
-    Ext4,
-    Ext5,
-    Ext6,
-    Ext7,
-    Ext8,
-    Ext9,
-    Ext10,
-    Ext11,
-    Ext12,
-    Ext13,
-    Ext14,
-    Ext15,
+    // extern function
+    TestAddID,
+    TestHasID,
 
     Invalid,
 }
@@ -198,13 +185,13 @@ pub trait ScriptCmd {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ScriptCmdFn<const N: usize> {
+pub struct ScriptCmdFunc<const N: usize> {
     pub opt: ScriptOpt,
     pub src: [ScriptAddr; N],
     pub dst: ScriptAddr,
 }
 
-impl<const N: usize> ScriptCmd for ScriptCmdFn<N> {
+impl<const N: usize> ScriptCmd for ScriptCmdFunc<N> {
     #[inline(always)]
     fn write(&self, code: &mut Vec<u16>) {
         unsafe {
@@ -281,19 +268,20 @@ impl ScriptCmd for ScriptCmdJmpCas {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ScriptCmdExt<const N: usize> {
+pub struct ScriptCmdMethod<const N: usize> {
     pub opt: ScriptOpt,
-    pub var: u16,
+    pub var_id: u8,
+    pub var_seg: u8,
     pub src: [ScriptAddr; N],
     pub dst: ScriptAddr,
 }
 
-impl<const N: usize> ScriptCmd for ScriptCmdExt<N> {
+impl<const N: usize> ScriptCmd for ScriptCmdMethod<N> {
     #[inline(always)]
     fn write(&self, code: &mut Vec<u16>) {
         unsafe {
             code.push(mem::transmute::<_, u16>(self.opt));
-            code.push(self.var);
+            code.push(mem::transmute::<_, u16>([self.var_id, self.var_seg]));
             for idx in 0..N {
                 code.push(mem::transmute::<_, u16>(self.src[idx]));
             }

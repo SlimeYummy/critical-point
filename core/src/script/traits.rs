@@ -2,14 +2,6 @@ use super::command::{ScriptAddr, ScriptVal};
 use std::collections::HashMap;
 use std::lazy::SyncLazy;
 
-pub const MAX_REGISTERS: usize = 64;
-pub const MAX_CONSTANTS: usize = 0x1000;
-pub const MAX_SEGMENTS: usize = 16;
-
-pub const SEGMENT_CONSTANT: u8 = 0;
-pub const SEGMENT_REGISTER: u8 = 1;
-pub const SEGMENT_VARS_START: u8 = 2;
-
 //
 // script variable
 //
@@ -72,64 +64,3 @@ pub trait ScriptCtx {
         return &Self::vars()[&var_id];
     }
 }
-
-// #[script_var(prefix = "test_out")]
-// #[derive(Default)]
-// pub struct ScriptExprOut {
-//     out: Fx,
-// }
-
-// #[script_var(prefix = "chara")]
-// #[derive(Default)]
-// pub struct ScriptChara {
-//     pub max_health: Fx,
-//     pub now_health: Fx,
-
-//     pub max_energy: Fx,
-//     pub now_energy: Fx,
-//     pub energy_speed: Fx,
-
-//     pub max_shield: Fx,
-//     pub now_shield: Fx,
-//     pub extra_shield: Fx,
-//     pub shield_speed: Fx,
-
-//     pub physical_atk: Fx,
-//     pub physical_def: Fx,
-//     pub elemental_atk: Fx,
-//     pub elemental_def: Fx,
-//     pub arcane_atk: Fx,
-//     pub arcane_def: Fx,
-// }
-
-// #[script_var(prefix = "hit")]
-// #[derive(Default)]
-// pub struct ScriptHit {
-//     total_frames: Fx,
-//     elapsed_frames: Fx,
-//     hit_times: Fx,
-//     refresh_times: Fx,
-// }
-
-// #[script_var(prefix = "src_effect")]
-// #[derive(Default)]
-// pub struct ScriptSrcEffect {
-//     pub health: Fx,
-//     pub energy: Fx,
-//     pub shield: Fx,
-// }
-
-// #[script_var(prefix = "dst_effect")]
-// #[derive(Default)]
-// pub struct ScriptDstEffect {
-//     pub physical_dmg: Fx,
-//     pub physical_bk: Fx,
-//     pub elemental_dmg: Fx,
-//     pub elemental_bk: Fx,
-//     pub arcane_dmg: Fx,
-//     pub arcane_bk: Fx,
-
-//     pub health: Fx,
-//     pub energy: Fx,
-//     pub shield: Fx,
-// }
