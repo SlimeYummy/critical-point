@@ -1,10 +1,10 @@
 use super::ast::{AstBlock, AstExpr, AstLogicType, AstStat, AstStatBranch};
 use super::command::{ScriptAddr, ScriptOpt, ScriptType};
-use super::segment::{
+use super::test::VarTestOut;
+use super::traits::{
     ScriptCtx, ScriptCtxFields, ScriptCtxVar, ScriptCtxVars, ScriptVar, EMPTY_CTX_FIELDS,
     EMPTY_CTX_VARS,
 };
-use super::test::VarTestOut;
 use anyhow::{self, Result};
 use lazy_static::lazy_static;
 use math::{ff, fi, Fx, RealExt};
@@ -470,8 +470,8 @@ impl ScriptParser {
 
 #[cfg(test)]
 mod tests {
+    use super::super::helper::ScriptCtx;
     use super::super::test::*;
-    use super::super::ScriptCtx;
     use super::*;
     use math::{Fx, RealExt};
 

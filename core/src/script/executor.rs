@@ -3,14 +3,20 @@ use super::command::{
     ScriptAddr, ScriptCmdFunc, ScriptCmdJmp, ScriptCmdJmpCas, ScriptCmdJmpCmp, ScriptCmdMethod,
     ScriptOpt, ScriptVal,
 };
-use super::segment::{
-    ScriptCtx, ScriptVar, MAX_REGISTERS, MAX_SEGMENTS, SEGMENT_CONSTANT, SEGMENT_REGISTER,
-};
 use super::test::VarTestOut;
+use super::traits::{ScriptCtx, ScriptVar};
 use math::{fi, fx_bool, Fx, RealExt};
-use simba::scalar::{ComplexField, RealField};
+use na::{ComplexField, RealField};
 use std::mem::{self, MaybeUninit};
 use thiserror::Error;
+
+pub const MAX_REGISTERS: usize = 64;
+pub const MAX_CONSTANTS: usize = 0x1000;
+pub const MAX_SEGMENTS: usize = 16;
+
+pub const SEGMENT_CONSTANT: u8 = 0;
+pub const SEGMENT_REGISTER: u8 = 1;
+pub const SEGMENT_VARS_START: u8 = 2;
 
 #[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScriptError {

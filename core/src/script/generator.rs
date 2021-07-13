@@ -7,9 +7,8 @@ use super::command::{
     ScriptAddr, ScriptCmd, ScriptCmdFunc, ScriptCmdJmp, ScriptCmdJmpCas, ScriptCmdJmpCmp,
     ScriptCmdJmpSet, ScriptCmdMethod, ScriptOpt,
 };
-use super::segment::{
-    ScriptCtx, ScriptVar, MAX_CONSTANTS, MAX_REGISTERS, SEGMENT_CONSTANT, SEGMENT_REGISTER,
-};
+use super::executor::{MAX_CONSTANTS, MAX_REGISTERS, SEGMENT_CONSTANT, SEGMENT_REGISTER};
+use super::traits::{ScriptCtx, ScriptVar};
 use anyhow::{anyhow, Result};
 use math::Fx;
 use std::cmp::Reverse;
@@ -420,10 +419,9 @@ impl ConstWriter {
 
 #[cfg(test)]
 mod tests {
-    use crate::script::command::ScriptCmdMethod;
-
+    use super::super::command::ScriptCmdMethod;
+    use super::super::helper::ScriptCtx;
     use super::super::parser::ScriptParser;
-    use super::super::segment::ScriptCtx;
     use super::super::test::*;
     use super::*;
     use math::{ff, fi, RealExt};

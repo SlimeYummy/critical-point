@@ -1,22 +1,16 @@
 use core::slice;
 use std::mem;
 
-#[derive(Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct ScriptByteCode {
-    ext_id: u16,
-    ctx_id: u16,
+    ctx_id: u8,
     const_len: usize,
     code_len: usize,
     buffer: Vec<u8>,
 }
 
 impl ScriptByteCode {
-    pub(super) fn new(
-        ext_id: u16,
-        ctx_id: u16,
-        const_segment: &[usize],
-        code_segment: &[u16],
-    ) -> ScriptByteCode {
+    pub(super) fn new(ctx_id: u8, const_segment: &[usize], code_segment: &[u16]) -> ScriptByteCode {
         let const_bytes = const_segment.len() * mem::size_of::<usize>();
         let code_bytes = code_segment.len() * mem::size_of::<u16>();
         let mut buffer: Vec<u8> = Vec::with_capacity(code_bytes + const_bytes);
@@ -28,7 +22,6 @@ impl ScriptByteCode {
         });
 
         return ScriptByteCode {
-            ext_id,
             ctx_id,
             const_len: const_segment.len(),
             code_len: code_segment.len(),
@@ -36,7 +29,7 @@ impl ScriptByteCode {
         };
     }
 
-    pub fn ctx_id(&self) -> u16 {
+    pub fn ctx_id(&self) -> u8 {
         return self.ctx_id;
     }
 

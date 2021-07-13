@@ -15,7 +15,7 @@ impl AstBlock {
 #[derive(Debug, Clone, PartialEq)]
 pub enum AstStat {
     Assign(AstStatAssign),
-    Call(AstStatCall),
+    Method(AstStatMethod),
     Branch(AstStatBranch),
 }
 
@@ -23,8 +23,8 @@ impl AstStat {
     pub fn new_assign(opt: Option<ScriptOpt>, var: ScriptAddr, expr: AstExpr) -> AstStat {
         return AstStat::Assign(AstStatAssign::new(opt, var, expr));
     }
-    pub fn new_call(args: Vec<AstExpr>) -> AstStat {
-        return AstStat::Call(AstStatCall::new(args));
+    pub fn new_method(opt: ScriptOpt, var_id: u8, var_seg: u8, args: Vec<AstExpr>) -> AstStat {
+        return AstStat::Method(AstStatMethod::new(opt, var_id, var_seg, args));
     }
 
     pub fn new_branch(
@@ -42,9 +42,9 @@ impl AstStat {
         };
     }
 
-    pub fn is_call(&self) -> bool {
+    pub fn is_call_ext(&self) -> bool {
         return match self {
-            &AstStat::Call(_) => true,
+            &AstStat::Method(_) => true,
             _ => false,
         };
     }
@@ -75,13 +75,21 @@ impl AstStatAssign {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AstStatCall {
+pub struct AstStatMethod {
+    pub opt: ScriptOpt,
+    pub var_id: u8,
+    pub var_seg: u8,
     pub args: Vec<AstExpr>,
 }
 
-impl AstStatCall {
-    pub fn new(args: Vec<AstExpr>) -> AstStatCall {
-        return AstStatCall { args };
+impl AstStatMethod {
+    pub fn new(opt: ScriptOpt, var_id: u8, var_seg: u8, args: Vec<AstExpr>) -> AstStatMethod {
+        return AstStatMethod {
+            opt,
+            var_id,
+            var_seg,
+            args,
+        };
     }
 }
 
@@ -111,7 +119,8 @@ pub enum AstExpr {
     Num(Fx),
     ID(usize),
     Var(ScriptAddr),
-    Normal(AstExprNormal),
+    Func(AstExprFunc),
+    Method(AstExprMethod),
     Branch(AstExprBranch),
     Logic(AstExprLogic),
 }
@@ -129,8 +138,12 @@ impl AstExpr {
         return AstExpr::Var(addr);
     }
 
-    pub fn new_normal(opt: ScriptOpt, args: Vec<AstExpr>) -> AstExpr {
-        return AstExpr::Normal(AstExprNormal::new(opt, args));
+    pub fn new_call(opt: ScriptOpt, args: Vec<AstExpr>) -> AstExpr {
+        return AstExpr::Func(AstExprFunc::new(opt, args));
+    }
+
+    pub fn new_method(opt: ScriptOpt, var_id: u8, var_seg: u8, args: Vec<AstExpr>) -> AstExpr {
+        return AstExpr::Method(AstExprMethod::new(opt, var_id, var_seg, args));
     }
 
     pub fn new_branch(cond: AstExpr, left: AstExpr, right: Option<AstExpr>) -> AstExpr {
@@ -164,7 +177,7 @@ impl AstExpr {
 
     pub fn is_normal(&self) -> bool {
         return match self {
-            &AstExpr::Normal(_) => true,
+            &AstExpr::Func(_) => true,
             _ => false,
         };
     }
@@ -185,14 +198,33 @@ impl AstExpr {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AstExprNormal {
+pub struct AstExprFunc {
     pub opt: ScriptOpt,
     pub args: Vec<AstExpr>,
 }
 
-impl AstExprNormal {
-    pub fn new(opt: ScriptOpt, args: Vec<AstExpr>) -> AstExprNormal {
-        return AstExprNormal { opt, args };
+impl AstExprFunc {
+    pub fn new(opt: ScriptOpt, args: Vec<AstExpr>) -> AstExprFunc {
+        return AstExprFunc { opt, args };
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AstExprMethod {
+    pub opt: ScriptOpt,
+    pub var_id: u8,
+    pub var_seg: u8,
+    pub args: Vec<AstExpr>,
+}
+
+impl AstExprMethod {
+    pub fn new(opt: ScriptOpt, var_id: u8, var_seg: u8, args: Vec<AstExpr>) -> AstExprMethod {
+        return AstExprMethod {
+            opt,
+            var_id,
+            var_seg,
+            args,
+        };
     }
 }
 
