@@ -1,6 +1,9 @@
 #![feature(once_cell)]
 
-extern crate proc_macro;
+extern crate darling;
+extern crate proc_macro2;
+extern crate quote;
+extern crate syn;
 
 mod csharp;
 mod script;
@@ -9,7 +12,7 @@ mod utils;
 use csharp::{csharp_enum, csharp_prop, csharp_state};
 use proc_macro::TokenStream;
 use quote::quote;
-use script::{script_opt_impl, script_var_impl};
+use script::{script_ctx_impl, script_var_impl};
 use syn::*;
 
 #[proc_macro_attribute]
@@ -132,12 +135,12 @@ pub fn def_obj(attr: TokenStream, class: TokenStream) -> TokenStream {
     });
 }
 
-#[proc_macro_derive(ScriptOpt, attributes(sign, func))]
-pub fn script_opt(input: TokenStream) -> TokenStream {
-    return script_opt_impl(input);
+#[proc_macro_attribute]
+pub fn script_var(attr: TokenStream, body: TokenStream) -> TokenStream {
+    return script_var_impl(attr, body);
 }
 
-#[proc_macro_derive(ScriptVar, attributes(script))]
-pub fn script_var(input: TokenStream) -> TokenStream {
-    return script_var_impl(input);
+#[proc_macro_attribute]
+pub fn script_ctx(attr: TokenStream, body: TokenStream) -> TokenStream {
+    return script_ctx_impl(attr, body);
 }
