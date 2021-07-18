@@ -3,6 +3,7 @@ name = "compiler"
 version = "0.1.0"
 authors = ["FenQiDian <email@fenqi.moe>"]
 edition = "2018"
+resolver = "2"
 
 [dependencies]
 core = { path = "../core" }
