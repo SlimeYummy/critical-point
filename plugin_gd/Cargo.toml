@@ -3,13 +3,14 @@ name = "plugin-gd"
 version = "0.1.0"
 authors = ["FenQiDian <email@fenqi.moe>"]
 edition = "2018"
+resolver = "2"
 
 [lib]
 crate-type = ["cdylib"]
 name = "critical_point_gd"
 
 [dependencies]
-anyhow = "1.0.34"
+anyhow = "1anyhow = "1.0.34"
 core = { path = "../core" }
 derivative = "2.2.0"
 euclid = "0.22.1"

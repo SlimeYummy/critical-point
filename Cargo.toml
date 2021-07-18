@@ -1,9 +1,9 @@
 [workspace]
+resolver = "2"
 members = [
     "derive",
     "math",
     "collide",
-    "script",
     "core",
     "compiler",
     "plugin_u3d",
