@@ -24,14 +24,17 @@ impl Default for ObjID {
 }
 
 impl ObjID {
+    #[inline]
     pub fn invalid() -> ObjID {
         return ObjID(0xFFFF_FFFF_FFFF_FFFF);
     }
 
+    #[inline]
     pub fn is_valid(&self) -> bool {
         return self.0 < Self::invalid().0;
     }
 
+    #[inline]
     pub fn is_invalid(&self) -> bool {
         return self.0 >= Self::invalid().0;
     }

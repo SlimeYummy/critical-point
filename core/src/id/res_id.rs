@@ -28,26 +28,32 @@ impl Default for ResID {
 }
 
 impl ResID {
+    #[inline]
     pub fn invalid() -> ResID {
         return ResID(String::new());
     }
 
+    #[inline]
     pub fn is_valid(&self) -> bool {
         return self.0 != Self::invalid().0;
     }
 
+    #[inline]
     pub fn is_invalid(&self) -> bool {
         return self.0 == Self::invalid().0;
     }
 
+    #[inline]
     pub fn is_stage(&self) -> bool {
         return self.0.starts_with("Stage");
     }
 
+    #[inline]
     pub fn is_character(&self) -> bool {
         return self.0.starts_with("Chara");
     }
 
+    #[inline]
     pub fn is_skill(&self) -> bool {
         return self.0.starts_with("Skill");
     }
@@ -75,14 +81,17 @@ impl Default for FastResID {
 }
 
 impl FastResID {
+    #[inline]
     pub fn invalid() -> FastResID {
         return FastResID(0xFFFF_FFFF_FFFF_FFFF);
     }
 
+    #[inline]
     pub fn is_valid(&self) -> bool {
         return self.0 < Self::invalid().0;
     }
 
+    #[inline]
     pub fn is_invalid(&self) -> bool {
         return self.0 >= Self::invalid().0;
     }
