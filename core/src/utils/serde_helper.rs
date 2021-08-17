@@ -8,7 +8,7 @@ pub fn bool_true() -> bool {
     return true;
 }
 
-pub mod isometry {
+pub mod serde_isometry {
     use math::{Fx, RealExt};
     use na::{Isometry3, Translation3, UnitQuaternion};
     use serde::de::{Deserializer, MapAccess, Visitor};
