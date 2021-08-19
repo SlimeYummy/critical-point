@@ -13,6 +13,14 @@ pub fn mut_ptr<T, U>(val: &mut T) -> *mut U {
     return (val as *mut T) as *mut U;
 }
 
+pub fn size_of_type<T: Sized>() -> usize {
+    return (mem::size_of::<T>() + mem::size_of::<usize>() - 1) / mem::size_of::<usize>();
+}
+
+pub fn size_of_array<T: Sized>(len: usize) -> usize {
+    return (mem::size_of::<T>() * len + mem::size_of::<usize>() - 1) / mem::size_of::<usize>();
+}
+
 pub trait CastRc {
     fn cast_as<D: Any>(self) -> Result<Rc<D>>;
     fn cast_to<D: Any>(&self) -> Result<Rc<D>>;
