@@ -6,12 +6,20 @@ A logic engine for 3D ACT games.
 
 ## Features
 
-- Independent of game engine.
-- Use fixed-point number, support lock-step networking synchronize.
+- Data driven and configurable.
+- Human friendly config files.
+- Independent of game engine, support headless mode.
+- Deterministic, support lock-step networking synchronize.
 
 ## Modules
 
 - derive: rust derive macros.
 - math: math library include vector, matrix and e.g.
+- collide: Deterministic collision detection (base on [ncollide](https://github.com/dimforge/ncollide)).
+- compiler: config file preprocessor.
 - core: core library.
+  - script: a very small script engine, tiny and fast.
+  - resource: resource manager.
+  - physic: physic logic.
+  - value: value logic.
 - plugin_x: plugins for game engine.
